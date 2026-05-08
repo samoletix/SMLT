@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module Structure Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #0055aa;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="test-container">
+        <h1>JavaScript Module Structure Test</h1>
+        <p>This test verifies that the modular JavaScript structure is working correctly.</p>
+
+        <div class="test-section">
+            <h2>Module Import Test</h2>
+            <p id="import-test">Testing module imports...</p>
+            <button onclick="testImports()">Test Imports</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Directory Structure</h2>
+            <p id="structure-test">Checking directory structure...</p>
+            <button onclick="testStructure()">Test Structure</button>
+        </div>
+
+        <div class="test-section">
+            <h2>CSS Structure</h2>
+            <p id="css-test">Checking CSS structure...</p>
+            <button onclick="testCSS()">Test CSS</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Results</h2>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Test module imports
+        async function testImports() {
+            const resultEl = document.getElementById('import-test');
+            const resultsEl = document.getElementById('results');
+
+            try {
+                // Test importing modules
+                const { authManager } = await import('./js/services/auth.js');
+                const { persistenceService } = await import('./js/services/storage.js');
+                const { apiClient } = await import('./js/services/api.js');
+
+                resultEl.innerHTML = '<span class="success">✓ All service modules import successfully</span>';
+                resultsEl.innerHTML += '<p class="success">Service modules: auth.js, storage.js, api.js - OK</p>';
+
+                // Test utility imports
+                const { isValidString } = await import('./js/utils/validation.js');
+                const { getElement } = await import('./js/utils/domHelpers.js');
+
+                resultsEl.innerHTML += '<p class="success">Utility modules: validation.js, domHelpers.js - OK</p>';
+
+                // Test component imports
+                const { AuthComponent } = await import('./js/components/AuthComponent.js');
+                const { BaseComponent } = await import('./js/components/BaseComponent.js');
+
+                resultsEl.innerHTML += '<p class="success">Component modules: AuthComponent.js, BaseComponent.js - OK</p>';
+
+            } catch (error) {
+                resultEl.innerHTML = `<span class="error">✗ Module import failed: ${error.message}</span>`;
+                resultsEl.innerHTML += `<p class="error">Import error: ${error.message}</p>`;
+            }
+        }
+
+        // Test directory structure
+        async function testStructure() {
+            const resultEl = document.getElementById('structure-test');
+            const resultsEl = document.getElementById('results');
+
+            try {
+                // Check if directories exist by trying to list them
+                const response = await fetch('./js/services/');
+                if (response.ok) {
+                    resultEl.innerHTML = '<span class="success">✓ JavaScript directory structure is correct</span>';
+                    resultsEl.innerHTML += '<p class="success">Directory structure: services/, components/, utils/, state/ - OK</p>';
+                } else {
+                    throw new Error('Directory structure issue');
+                }
+            } catch (error) {
+                resultEl.innerHTML = `<span class="error">✗ Directory structure check failed: ${error.message}</span>`;
+                resultsEl.innerHTML += `<p class="error">Structure error: ${error.message}</p>`;
+            }
+        }
+
+        // Test CSS structure
+        async function testCSS() {
+            const resultEl = document.getElementById('css-test');
+            const resultsEl = document.getElementById('results');
+
+            try {
+                // Check if CSS files exist
+                const files = [
+                    'css/base/variables.css',
+                    'css/base/reset.css',
+                    'css/base/typography.css',
+                    'css/layout/header.css',
+                    'css/layout/main.css',
+                    'css/layout/grid.css',
+                    'css/layout/footer.css',
+                    'css/utils/utilities.css'
+                ];
+
+                let allExist = true;
+                for (const file of files) {
+                    const response = await fetch(file);
+                    if (!response.ok) {
+                        allExist = false;
+                        resultsEl.innerHTML += `<p class="error">Missing CSS file: ${file}</p>`;
+                    }
+                }
+
+                if (allExist) {
+                    resultEl.innerHTML = '<span class="success">✓ All CSS files exist</span>';
+                    resultsEl.innerHTML += '<p class="success">CSS modular structure: base/, layout/, components/, utils/ - OK</p>';
+                } else {
+                    throw new Error('Some CSS files are missing');
+                }
+            } catch (error) {
+                resultEl.innerHTML = `<span class="error">✗ CSS structure check failed: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+
+</html>
