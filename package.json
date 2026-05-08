@@ -1,0 +1,31 @@
+{
+    "name": "geometry-dash-leaderboard",
+    "version": "1.0.0",
+    "description": "Geometry Dash Leaderboard - Display top players from Demonlist.org API with SMLT Discord server styling",
+    "main": "js/app.js",
+    "scripts": {
+        "test": "echo \"Tests will be implemented in Phase 8\" && exit 0",
+        "dev": "echo \"Development server will be configured in Phase 1.1\" && exit 0",
+        "build": "echo \"Build tools will be configured in Phase 6\" && exit 0"
+    },
+    "keywords": [
+        "geometry-dash",
+        "leaderboard",
+        "demonlist",
+        "smlt",
+        "discord"
+    ],
+    "author": "SMLT Community",
+    "license": "MIT",
+    "type": "module",
+    "engines": {
+        "node": ">=14.0.0"
+    },
+    "dependencies": {},
+    "devDependencies": {},
+    "browserslist": [
+        "> 0.5%",
+        "last 2 versions",
+        "not dead"
+    ]
+}
