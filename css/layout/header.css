@@ -1,0 +1,77 @@
+/* 
+ * Header Layout
+ */
+
+.app-header {
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    height: var(--header-height);
+    position: sticky;
+    top: 0;
+    z-index: var(--z-index-sticky);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+.header-content {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: 0 var(--spacing-xl);
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-lg);
+}
+
+/* Branding */
+.branding {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.app-title {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    letter-spacing: -0.3px;
+    line-height: 1;
+}
+
+.app-subtitle {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: var(--font-weight-medium);
+}
+
+/* SMLT Badge */
+.smlt-logo-placeholder {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.logo {
+    background: linear-gradient(135deg, var(--color-secondary), #0088ff);
+    color: white;
+    padding: 6px 14px;
+    border-radius: var(--border-radius-md);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-sm);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    box-shadow: var(--shadow-blue);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .header-content {
+        padding: 0 var(--spacing-md);
+    }
+
+    .app-title {
+        font-size: var(--font-size-lg);
+    }
+}
