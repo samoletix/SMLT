@@ -986,8 +986,7 @@
                     const percent = r.progress || 100;
                     return `<div class="record-item"><span class="record-demon">${escapeHtml(demonName)} <span style="color:var(--color-text-muted);font-size:0.9em;">#${demonPlacement}</span></span><span class="record-progress ${percent >= 100 ? 'progress-100' : ''}">${percent}%</span></div>`;
                 }).join('') : '<p style="text-align:center;color:var(--color-text-muted);padding:var(--spacing-lg);">Нет записей</p>';
-            DOM.profileContent.innerHTML = `<div{}
- class="profile-stats">
+            DOM.profileContent.innerHTML = `<div class="profile-stats">
                 <div class="profile-stat"><div class="profile-stat-value">${player.score ? player.score.toFixed(2) : '—'}</div><div class="profile-stat-label">Очки</div></div>
                 <div class="profile-stat"><div class="profile-stat-value">#${player.rank || '—'}</div><div class="profile-stat-label">Глобальный топ</div></div>
                 <div class="profile-stat"><div class="profile-stat-value">#${index + 1}</div><div class="profile-stat-label">Локальный топ</div></div>
@@ -1042,15 +1041,8 @@
             if (!password) { DOM.modalAuthError.textContent = 'Введите пароль'; DOM.modalAuthError.style.display = 'block'; return; }
             DOM.modalLoginBtn.disabled = true;
             DOM.modalLoginBtn.textContent = 'Проверка...';
-            const hashedInput = await hashPassword(password);
-            const valid = await login(password);
+            const valid = await HostAuth.login(password);
             if (valid) {
-                // Сохраняем хэш пароля в сессии для проверки
-                localStorage.setItem(SESSION_KEY, JSON.stringify({
-                    hash: hashedInput,
-                    expires: Date.now() + 24 * 60 * 60 * 1000
-                }));
-                isHost = true;
                 hideLoginModal();
                 updateUI();
                 renderPlayers();
