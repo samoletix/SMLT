@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Get Hash</title>
+</head>
+
+<body>
+    <h1>Вычисление хэша пароля</h1>
+    <input type="text" id="password" placeholder="Введите пароль" value="samoletik2024"
+        style="padding: 10px; font-size: 16px;">
+    <button onclick="calculateHash()" style="padding: 10px 20px; font-size: 16px;">Вычислить хэш</button>
+    <p id="result" style="font-size: 20px; font-weight: bold; color: green;"></p>
+
+    <script>
+        async function calculateHash() {
+            const password = document.getElementById('password').value;
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password + 'smlt_salt_2024');
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
+            document.getElementById('result').textContent = 'Хэш: ' + hash;
+            console.log('Hash:', hash);
+        }
+    </script>
+</body>
+
+</html>
