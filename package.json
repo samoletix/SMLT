@@ -2,11 +2,10 @@
     "name": "geometry-dash-leaderboard",
     "version": "1.0.0",
     "description": "Geometry Dash Leaderboard - Display top players from Demonlist.org API with SMLT Discord server styling",
-    "main": "js/app.js",
+    "main": "server.js",
     "scripts": {
-        "test": "echo \"Tests will be implemented in Phase 8\" && exit 0",
-        "dev": "echo \"Development server will be configured in Phase 1.1\" && exit 0",
-        "build": "echo \"Build tools will be configured in Phase 6\" && exit 0"
+        "start": "node server.js",
+        "test": "echo \"Tests will be implemented\" && exit 0"
     },
     "keywords": [
         "geometry-dash",

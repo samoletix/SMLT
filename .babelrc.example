@@ -1,0 +1,33 @@
+{
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "targets": {
+          "browsers": ["> 0.5%", "last 2 versions", "not dead"]
+        },
+        "useBuiltIns": "usage",
+        "corejs": 3
+      }
+    ]
+  ],
+  "plugins": [
+    "@babel/plugin-proposal-class-properties",
+    "@babel/plugin-proposal-private-methods"
+  ]
+}
+
+/*
+ * Babel Configuration Example
+ * 
+ * To use this configuration:
+ * 1. Rename to .babelrc
+ * 2. Install dependencies: npm install --save-dev @babel/core @babel/preset-env @babel/plugin-proposal-class-properties @babel/plugin-proposal-private-methods core-js
+ * 3. Ensure webpack.config.js uses babel-loader
+ * 
+ * This configuration:
+ * - Transpiles ES6+ to ES5 for browser compatibility
+ * - Automatically adds polyfills based on usage
+ * - Supports class properties and private methods
+ * - Targets browsers with >0.5% market share
+ */
