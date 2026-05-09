@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Таблица лидеров Geometry Dash — SMLT Community Edition">
+    <title>GD Leaderboard — SMLT</title>
+    <link rel="stylesheet" href="css/base/variables.css">
+    <link rel="stylesheet" href="css/base/reset.css">
+    <link rel="stylesheet" href="css/base/typography.css">
+    <link rel="stylesheet" href="css/layout/header.css">
+    <link rel="stylesheet" href="css/layout/main.css">
+    <link rel="stylesheet" href="css/layout/grid.css">
+    <link rel="stylesheet" href="css/layout/footer.css">
+    <link rel="stylesheet" href="css/components/buttons.css">
+    <link rel="stylesheet" href="css/components/forms.css">
+    <link rel="stylesheet" href="css/components/tables.css">
+    <link rel="stylesheet" href="css/components/alerts.css">
+    <link rel="stylesheet" href="css/utils/utilities.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .app-header {
+            position: relative;
+        }
+
+        .host-access-container {
+            position: absolute;
+            top: var(--spacing-md);
+            right: var(--spacing-xl);
+            z-index: 10;
+            display: flex;
+            gap: var(--spacing-sm);
+            align-items: center;
+        }
+
+        .host-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background-color: var(--color-secondary-light);
+            border: 1px solid var(--color-secondary);
+            border-radius: var(--border-radius-md);
+            color: var(--color-secondary);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+            cursor: pointer;
+        }
+
+        .host-badge:hover {
+            background-color: var(--color-secondary);
+            color: white;
+        }
+
+        .host-badge .avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--color-secondary), #0088ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: var(--spacing-md);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity var(--transition-normal), visibility var(--transition-normal);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius-lg);
+            width: 100%;
+            max-width: 380px;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(20px);
+            transition: transform var(--transition-normal);
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: var(--font-size-md);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--color-text-muted);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 1.2rem;
+        }
+
+        .modal-close:hover {
+            color: var(--color-text-primary);
+        }
+
+        .modal-body {
+            padding: var(--spacing-lg);
+        }
+
+        .modal-footer {
+            padding: var(--spacing-lg);
+            border-top: 1px solid var(--color-border);
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        .leaderboard-section {
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+        }
+
+        .leaderboard-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-lg) var(--spacing-xl);
+            border-bottom: 1px solid var(--color-border);
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+
+        .player-row {
+            display: grid;
+            grid-template-columns: 50px 1fr 100px 100px 40px;
+            padding: 0 var(--spacing-md);
+            border-bottom: 1px solid var(--color-border);
+            transition: background-color var(--transition-fast);
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .player-row:last-child {
+            border-bottom: none;
+        }
+
+        .player-row:hover {
+            background-color: var(--color-surface-2);
+        }
+
+        .cell {
+            padding: var(--spacing-md) var(--spacing-sm);
+            font-size: var(--font-size-sm);
+        }
+
+        .cell-position {
+            text-align: center;
+            font-weight: var(--font-weight-bold);
+            font-size: var(--font-size-lg);
+        }
+
+        .rank-1 {
+            color: #f59e0b;
+        }
+
+        .rank-2 {
+            color: #94a3b8;
+        }
+
+        .rank-3 {
+            color: #cd7c3a;
+        }
+
+        .rank-other {
+            color: var(--color-text-muted);
+        }
+
+        .cell-player {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .player-flag {
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        .player-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .player-name {
+            font-weight: var(--font-weight-medium);
+            color: var(--color-text-primary);
+        }
+
+        .player-score {
+            font-size: var(--font-size-xs);
+            color: var(--color-text-muted);
+        }
+
+        .cell-points,
+        .cell-records {
+            text-align: right;
+            color: var(--color-text-secondary);
+        }
+
+        .cell-actions {
+            text-align: center;
+        }
+
+        .profile-modal {
+            max-width: 600px;
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-md);
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .profile-stat {
+            text-align: center;
+        }
+
+        .profile-stat-value {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--color-text-primary);
+        }
+
+        .profile-stat-label {
+            font-size: var(--font-size-xs);
+            color: var(--color-text-muted);
+            margin-top: 4px;
+        }
+
+        .profile-records {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: var(--spacing-md);
+        }
+
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--border-radius-sm);
+            margin-bottom: 4px;
+        }
+
+        .record-item:hover {
+            background-color: var(--color-surface-2);
+        }
+
+        .record-demon {
+            font-weight: var(--font-weight-medium);
+            color: var(--color-text-primary);
+        }
+
+        .record-progress {
+            font-size: var(--font-size-sm);
+            padding: 2px 8px;
+            border-radius: var(--border-radius-full);
+            background-color: var(--color-surface-3);
+            color: var(--color-text-secondary);
+        }
+
+        .record-progress.progress-100 {
+            background-color: var(--color-success-light);
+            color: var(--color-success);
+        }
+
+        .management-card {
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+        }
+
+        .management-card-header {
+            padding: var(--spacing-md) var(--spacing-xl);
+            border-bottom: 1px solid var(--color-border);
+            background-color: var(--color-surface-2);
+        }
+
+        .management-card-body {
+            padding: var(--spacing-xl);
+        }
+
+        .empty-state {
+            padding: var(--spacing-2xl);
+            text-align: center;
+            color: var(--color-text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 2.5rem;
+            opacity: 0.3;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .page-section {
+            margin-bottom: var(--spacing-2xl);
+        }
+
+        .page-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .section-label-bar {
+            width: 3px;
+            height: 18px;
+            background: var(--color-secondary);
+            border-radius: var(--border-radius-full);
+            flex-shrink: 0;
+        }
+
+        .section-label-text {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+        }
+
+        .section-label-actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .management-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-lg);
+        }
+
+        @media (max-width: 800px) {
+            .management-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .player-row {
+                grid-template-columns: 40px 1fr 80px;
+            }
+
+            .cell-records,
+            .cell-actions {
+                display: none;
+            }
+
+            .host-access-container {
+                position: static;
+                margin-top: var(--spacing-md);
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .app-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: var(--spacing-sm);
+            }
+
+            .section-label {
+                flex-wrap: wrap;
+            }
+
+            .section-label-actions {
+                width: 100%;
+                justify-content: center;
+                margin-left: 0;
+                margin-top: var(--spacing-sm);
+            }
+
+            .profile-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .leaderboard-section-header {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .host-access-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .player-row {
+                grid-template-columns: 30px 1fr 60px;
+                font-size: var(--font-size-xs);
+            }
+
+            .cell-points {
+                display: none;
+            }
+        }
+
+        @keyframes toast-in {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes toast-out {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <header class="app-header">
+            <div class="header-content">
+                <div class="branding">
+                    <div class="app-title">GD Leaderboard</div>
+                    <div class="app-subtitle">Geometry Dash · SMLT Community</div>
+                </div>
+                <div class="smlt-logo-placeholder">
+                    <div class="logo">SMLT</div>
+                </div>
+            </div>
+            <div class="host-access-container">
+                <div id="host-badge" class="host-badge" style="display: none;" onclick="logout()">
+                    <div class="avatar">�</div>
+                    <span>Хост (выход)</span>
+                </div>
+            </div>
+        </header>
+        <main class="app-main">
+            <div class="page-section">
+                <div class="section-label">
+                    <div class="section-label-bar"></div>
+                    <div class="section-label-text">Таблица лидеров</div>
+                    <div class="section-label-actions">
+                        <div id="loading-indicator" class="loading-indicator" style="display: none;">
+                            <div class="spinner"></div><span>Загрузка...</span>
+                        </div>
+                        <button id="refresh-btn" class="btn btn-secondary btn-sm">↻ Обновить</button>
+                    </div>
+                </div>
+                <div class="leaderboard-section">
+                    <div class="leaderboard-section-header">
+                        <div>
+                            <div style="font-weight: 600;">Топ игроков Demonlist</div>
+                            <div style="font-size: var(--font-size-xs); color: var(--color-text-muted);">Данные из
+                                Global Demonlist API</div>
+                        </div>
+                    </div>
+                    <div id="player-rows">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🏆</div>
+                            <p>Загрузка списка игроков...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="management-section" style="display: none;" class="page-section">
+                <div class="section-label">
+                    <div class="section-label-bar"></div>
+                    <div class="section-label-text">Управление игроками (только хост)</div>
+                </div>
+                <div class="management-grid">
+                    <div class="management-card">
+                        <div class="management-card-header">
+                            <h3>➕ Добавить игрока</h3>
+                        </div>
+                        <div class="management-card-body">
+                            <div class="form-group">
+                                <label for="player-identifier">ID или никнейм игрока</label>
+                                <div style="display: flex; gap: var(--spacing-sm);">
+                                    <input type="text" id="player-identifier" placeholder="Например: nswish или 12345"
+                                        style="flex:1">
+                                    <button id="add-player-btn" class="btn btn-primary">Добавить</button>
+                                </div>
+                                <small
+                                    style="color: var(--color-text-muted); font-size: var(--font-size-xs); margin-top: 4px; display: block;">Введите
+                                    никнейм или ID с demonlist.org</small>
+                            </div>
+                            <div id="add-player-error" class="error-message" role="alert"></div>
+                        </div>
+                    </div>
+                    <div class="management-card">
+                        <div class="management-card-header">
+                            <h3>📊 Статистика</h3>
+                        </div>
+                        <div class="management-card-body">
+                            <div
+                                style="display: flex; justify-content: space-between; padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--color-border);">
+                                <span style="color: var(--color-text-muted); font-size: var(--font-size-sm);">Всего
+                                    игроков</span>
+                                <span id="total-players" style="font-weight: 600;">0</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: var(--spacing-sm) 0;">
+                                <span style="color: var(--color-text-muted); font-size: var(--font-size-sm);">Последнее
+                                    обновление</span>
+                                <span id="last-updated" style="font-weight: 600;">Никогда</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <footer class="app-footer">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <p>Данные предоставлены <a href="https://demonlist.org" target="_blank"
+                            rel="noopener noreferrer">Global Demonlist</a></p>
+                </div>
+                <div
+                    style="margin-top: var(--spacing-md); display: flex; gap: var(--spacing-sm); align-items: center; flex-wrap: wrap;">
+                    <div id="host-login-btn" class="host-badge" style="display: flex;" onclick="showLoginModal()">
+                        <div class="avatar">🔐</div>
+                        <span>Вход хоста</span>
+                    </div>
+                    <button id="info-button"
+                        class="btn btn-secondary btn-sm"><span>ℹ️</span><span>Информация</span></button>
+                </div>
+            </div>
+        </footer>
+    </div>
+    <div id="login-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">🔐 Вход для хоста</div>
+                <button id="modal-close" class="modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="modal-password">Пароль хоста</label>
+                    <input type="password" id="modal-password" placeholder="Введите пароль" style="width: 100%;">
+                </div>
+                <div id="modal-auth-error" class="error-message"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-login-btn" class="btn btn-primary" style="flex:1;">Войти</button>
+                <button id="modal-cancel-btn" class="btn btn-secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+    <div id="profile-modal" class="modal-overlay">
+        <div class="modal profile-modal">
+            <div class="modal-header">
+                <div id="profile-title">Профиль игрока</div>
+                <button id="profile-close" class="modal-close">✕</button>
+            </div>
+            <div id="profile-content"></div>
+        </div>
+    </div>
+    <div id="info-modal" class="modal-overlay">
+        <div class="modal" style="max-width: 480px;">
+            <div class="modal-header">
+                <div class="modal-title">📋 Информация</div>
+                <button id="info-close" class="modal-close">✕</button>
+            </div>
+            <div class="modal-body" style="padding: var(--spacing-xl);">
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-lg);">
+                    <div
+                        style="padding: var(--spacing-md); background: var(--color-surface-2); border-radius: var(--border-radius-md);">
+                        <div
+                            style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                            Discord Server</div>
+                        <a href="https://discord.gg/VK56W7ZzdA" target="_blank"
+                            style="color: var(--color-secondary); font-weight: 600; text-decoration: none;">discord.gg/VK56W7ZzdA</a>
+                    </div>
+                    <div
+                        style="padding: var(--spacing-md); background: var(--color-surface-2); border-radius: var(--border-radius-md);">
+                        <div
+                            style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                            Admin</div>
+                        <div style="font-weight: 500;">Discord: <span
+                                style="color: var(--color-secondary);">@.samoletik</span></div>
+                        <div style="font-weight: 500; margin-top: var(--spacing-xs);">Telegram: <span
+                                style="color: var(--color-secondary);">@samoltik</span></div>
+                    </div>
+                    <div
+                        style="padding: var(--spacing-md); background: var(--color-surface-2); border-radius: var(--border-radius-md); border-left: 3px solid var(--color-secondary);">
+                        <div
+                            style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                            Как попасть в лист?</div>
+                        <div style="line-height: 1.6;">Нужно попасть в стафф SMLT, имея очки в GDL. Для этого напишите
+                            админу.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAkHuQ16vK9uAO0D527d9ooDXQzLCG83MM",
+            authDomain: "smlt-97ce4.firebaseapp.com",
+            databaseURL: "https://smlt-97ce4-default-rtdb.firebaseio.com",
+            projectId: "smlt-97ce4",
+            storageBucket: "smlt-97ce4.firebasestorage.app",
+            messagingSenderId: "395767004171",
+            appId: "1:395767004171:web:6622b51a554fc5bf27db0e"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const API_BASE = 'https://api.demonlist.org';
+        const SESSION_KEY = 'gd_leaderboard_auth';
+        const HOST_HASH_KEY = 'gd_host_verification';
+        let players = [];
+
+        // Security: isHost is now a private closure variable, not directly accessible
+        // Use isHostVerified() to check authentication status
+        const HostAuth = (function () {
+            let _isHost = false;
+            const _correctHash = '4eff0760cb4c802f';
+            const _sessionDuration = 24 * 60 * 60 * 1000; // 24 hours
+
+            function _generateVerificationToken() {
+                const timestamp = Date.now();
+                const random = Math.random().toString(36).substring(2);
+                return `${timestamp}_${random}`;
+            }
+
+            return {
+                isAuthenticated: function () {
+                    // Always verify from localStorage, not from memory variable
+                    try {
+                        const data = localStorage.getItem(SESSION_KEY);
+                        if (!data) {
+                            _isHost = false;
+                            return false;
+                        }
+                        const session = JSON.parse(data);
+                        if (session.expires < Date.now()) {
+                            localStorage.removeItem(SESSION_KEY);
+                            _isHost = false;
+                            return false;
+                        }
+                        if (session.hash !== _correctHash) {
+                            _isHost = false;
+                            return false;
+                        }
+                        // Additional verification: check token matches
+                        const verificationData = localStorage.getItem(HOST_HASH_KEY);
+                        if (!verificationData || verificationData !== session.verificationToken) {
+                            _isHost = false;
+                            return false;
+                        }
+                        _isHost = true;
+                        return true;
+                    } catch (e) {
+                        _isHost = false;
+                        return false;
+                    }
+                },
+
+                login: async function (password) {
+                    const hashedInput = await hashPassword(password);
+                    if (hashedInput === _correctHash) {
+                        const token = _generateVerificationToken();
+                        const session = {
+                            hash: _correctHash,
+                            expires: Date.now() + _sessionDuration,
+                            verificationToken: token
+                        };
+                        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+                        localStorage.setItem(HOST_HASH_KEY, token);
+                        _isHost = true;
+                        return true;
+                    }
+                    return false;
+                },
+
+                logout: function () {
+                    localStorage.removeItem(SESSION_KEY);
+                    localStorage.removeItem(HOST_HASH_KEY);
+                    _isHost = false;
+                },
+
+                // Getter that always verifies auth state
+                getStatus: function () {
+                    return this.isAuthenticated();
+                }
+            };
+        })();
+
+        // Legacy compatibility wrapper
+        function isHostVerified() {
+            return HostAuth.getStatus();
+        }
+
+        // For backward compatibility with renderPlayers, we expose a read-only property
+        Object.defineProperty(window, 'isHost', {
+            get: function () { return HostAuth.getStatus(); },
+            set: function (value) {
+                // Silently ignore any attempts to set isHost from console
+                console.warn('Direct modification of host status is not allowed');
+            }
+        });
+
+        const COUNTRY_FLAGS = {
+            'RU': '🇷🇺', 'US': '🇺🇸', 'DE': '🇩🇪', 'FR': '🇫🇷', 'GB': '🇬🇧',
+            'BR': '🇧🇷', 'KR': '🇰🇷', 'JP': '🇯🇵', 'CN': '🇨🇳', 'PL': '🇵🇱',
+            'UA': '🇺🇦', 'CA': '🇨🇦', 'AU': '🇦🇺', 'ES': '🇪🇸', 'IT': '🇮🇹',
+            'AR': '🇦🇷', 'CL': '🇨🇱', 'MX': '🇲🇽', 'NL': '🇳🇱', 'SE': '🇸🇪',
+            'NO': '🇳🇴', 'FI': '🇫🇮', 'DK': '🇩🇰', 'BE': '🇧🇪', 'AT': '🇦🇹',
+            'CZ': '🇨🇿', 'SK': '🇸🇰', 'HU': '🇭🇺', 'RO': '🇷🇴', 'BG': '🇧🇬',
+            'TR': '🇹🇷', 'IL': '🇮🇱', 'SA': '🇸🇦', 'AE': '🇦🇪', 'IN': '🇮🇳',
+            'ID': '🇮🇩', 'TH': '🇹🇭', 'VN': '🇻🇳', 'MY': '🇲🇾', 'SG': '🇸🇬',
+            'PH': '🇵🇭', 'NZ': '🇳🇿', 'ZA': '🇿🇦', 'EG': '🇪🇬', 'NG': '🇳🇬',
+            'CO': '🇨🇴', 'PE': '🇵🇪', 'VE': '🇻🇪', 'EC': '🇪🇨', 'PT': '🇵🇹',
+            'GR': '🇬🇷', 'HR': '🇭🇷', 'RS': '🇷🇸', 'SI': '🇸🇮', 'EE': '🇪🇪',
+            'LV': '🇱🇻', 'LT': '🇱🇹', 'BY': '🇧🇾', 'KZ': '🇰🇿', 'UZ': '🇺🇿',
+            'TW': '🇹🇼', 'HK': '🇭🇰', 'MO': '🇲🇴'
+        };
+
+        const COUNTRY_NAME_TO_CODE = {
+            'russia': 'RU', 'united-states': 'US', 'united states': 'US', 'usa': 'US',
+            'germany': 'DE', 'france': 'FR', 'united-kingdom': 'GB', 'uk': 'GB',
+            'brazil': 'BR', 'south-korea': 'KR', 'korea': 'KR', 'japan': 'JP',
+            'china': 'CN', 'poland': 'PL', 'ukraine': 'UA', 'canada': 'CA',
+            'australia': 'AU', 'spain': 'ES', 'italy': 'IT', 'argentina': 'AR',
+            'chile': 'CL', 'mexico': 'MX', 'netherlands': 'NL', 'sweden': 'SE',
+            'norway': 'NO', 'finland': 'FI', 'denmark': 'DK', 'belgium': 'BE',
+            'austria': 'AT', 'czech-republic': 'CZ', 'czechia': 'CZ', 'slovakia': 'SK',
+            'hungary': 'HU', 'romania': 'RO', 'bulgaria': 'BG', 'turkey': 'TR',
+            'israel': 'IL', 'saudi-arabia': 'SA', 'united-arab-emirates': 'AE',
+            'india': 'IN', 'indonesia': 'ID', 'thailand': 'TH', 'vietnam': 'VN',
+            'malaysia': 'MY', 'singapore': 'SG', 'philippines': 'PH', 'new-zealand': 'NZ',
+            'south-africa': 'ZA', 'egypt': 'EG', 'nigeria': 'NG', 'colombia': 'CO',
+            'peru': 'PE', 'venezuela': 'VE', 'ecuador': 'EC', 'portugal': 'PT',
+            'greece': 'GR', 'croatia': 'HR', 'serbia': 'RS', 'slovenia': 'SI',
+            'estonia': 'EE', 'latvia': 'LV', 'lithuania': 'LT', 'belarus': 'BY',
+            'kazakhstan': 'KZ', 'uzbekistan': 'UZ', 'taiwan': 'TW', 'hong-kong': 'HK', 'macau': 'MO',
+            // API returns these formats (lowercase)
+            'united states of america': 'US', 'south korea': 'KR', 'new zealand': 'NZ',
+            'south africa': 'ZA', 'saudi arabia': 'SA', 'united arab emirates': 'AE',
+            'czech republic': 'CZ', 'hong kong': 'HK'
+        };
+
+        function getFlag(countryName) {
+            if (!countryName) return '🌍';
+            let countryStr = typeof countryName === 'object' ? (countryName.country_code || countryName.name || '') : countryName.toString();
+            // Direct 2-letter code match
+            if (countryStr.length === 2 && COUNTRY_FLAGS[countryStr.toUpperCase()]) return COUNTRY_FLAGS[countryStr.toUpperCase()];
+            // Normalize: lowercase, replace spaces/underscores with hyphens, then try both formats
+            const normalized = countryStr.toLowerCase().replace(/\s+/g, '-').replace(/_/g, '-').trim();
+            // Try hyphenated format first
+            let code = COUNTRY_NAME_TO_CODE[normalized];
+            if (code && COUNTRY_FLAGS[code]) return COUNTRY_FLAGS[code];
+            // Try with spaces instead of hyphens
+            const withSpaces = normalized.replace(/-/g, ' ');
+            code = COUNTRY_NAME_TO_CODE[withSpaces];
+            if (code && COUNTRY_FLAGS[code]) return COUNTRY_FLAGS[code];
+            return '🌍';
+        }
+
+        const DOM = {
+            playerRows: document.getElementById('player-rows'),
+            playerIdentifier: document.getElementById('player-identifier'),
+            addPlayerBtn: document.getElementById('add-player-btn'),
+            addPlayerError: document.getElementById('add-player-error'),
+            managementSection: document.getElementById('management-section'),
+            refreshBtn: document.getElementById('refresh-btn'),
+            loadingIndicator: document.getElementById('loading-indicator'),
+            totalPlayers: document.getElementById('total-players'),
+            lastUpdated: document.getElementById('last-updated'),
+            profileModal: document.getElementById('profile-modal'),
+            profileClose: document.getElementById('profile-close'),
+            profileContent: document.getElementById('profile-content'),
+            profileTitle: document.getElementById('profile-title'),
+            infoButton: document.getElementById('info-button'),
+            infoModal: document.getElementById('info-modal'),
+            infoClose: document.getElementById('info-close'),
+            hostBadge: document.getElementById('host-badge'),
+            loginModal: document.getElementById('login-modal'),
+            modalClose: document.getElementById('modal-close'),
+            modalCancelBtn: document.getElementById('modal-cancel-btn'),
+            modalPassword: document.getElementById('modal-password'),
+            modalLoginBtn: document.getElementById('modal-login-btn'),
+            modalAuthError: document.getElementById('modal-auth-error')
+        };
+
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password + 'smlt_salt_2024');
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
+        }
+
+        async function isLoggedIn() {
+            return HostAuth.isAuthenticated();
+        }
+
+        async function login(password) {
+            return await HostAuth.login(password);
+        }
+
+        function logout() {
+            HostAuth.logout();
+            updateUI();
+            renderPlayers();
+            showToast('Вы вышли из режима хоста');
+        }
+
+        function loadPlayersFromDB() {
+            setLoading(true);
+            const playersRef = database.ref('players');
+            playersRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                players = data ? Object.values(data) : [];
+                renderPlayers();
+                setLoading(false);
+                console.log(`Loaded ${players.length} players from database`);
+            }, (error) => {
+                console.error('Error loading players:', error);
+                showToast('Ошибка загрузки данных');
+                setLoading(false);
+            });
+        }
+
+        function savePlayerToDB(player) {
+            return database.ref('players').child(player.id.toString()).set(player);
+        }
+
+        function removePlayerFromDB(playerId) {
+            return database.ref('players').child(playerId.toString()).remove();
+        }
+
+        async function fetchPlayerFromAPI(identifier) {
+            const searchUrl = `${API_BASE}/leaderboard/user/list?search=${encodeURIComponent(identifier)}&limit=50`;
+            const response = await fetch(searchUrl, { headers: { 'Accept': 'application/json' } });
+            if (!response.ok) throw new Error(`Ошибка API: ${response.status}`);
+            const result = await response.json();
+            if (result.message !== 'success' || !result.data || !result.data.users) throw new Error('Неверный формат ответа от API');
+            const users = result.data.users;
+            const identifierLower = identifier.toString().toLowerCase();
+            let foundPlayer = null;
+            for (const player of users) {
+                if (player.id.toString() === identifier) { foundPlayer = player; break; }
+                if (player.username && player.username.toLowerCase() === identifierLower) { foundPlayer = player; break; }
+            }
+            if (!foundPlayer && !isNaN(parseInt(identifier))) foundPlayer = users.find(p => p.id === parseInt(identifier));
+            if (!foundPlayer) throw new Error('Игрок не найден');
+            const recordsData = await fetchPlayerRecords(foundPlayer.id);
+            let hardest = null;
+            if (recordsData && recordsData.length > 0) {
+                const acceptedRecords = recordsData.filter(r => r.status === 'accepted' && r.level);
+                if (acceptedRecords.length > 0) hardest = acceptedRecords.reduce((min, r) => (!min || r.level.placement < min.level.placement) ? r : min);
+            }
+            return { id: foundPlayer.id, name: foundPlayer.username, rank: foundPlayer.placement || 0, score: parseFloat(foundPlayer.points) || 0, nationality: foundPlayer.country || null, records: recordsData || [], hardest: hardest, badge: foundPlayer.badge || null };
+        }
+
+        async function fetchPlayerRecords(playerId) {
+            try {
+                const url = `${API_BASE}/user/record/list?user_id=${playerId}&limit=50`;
+                const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                if (!response.ok) return [];
+                const result = await response.json();
+                return result.message === 'success' && result.data?.records ? result.data.records : [];
+            } catch (e) { return []; }
+        }
+
+        function updateUI() {
+            DOM.managementSection.style.display = isHost ? 'block' : 'none';
+            DOM.hostBadge.style.display = isHost ? 'flex' : 'none';
+            document.getElementById('host-login-btn').style.display = isHost ? 'none' : 'flex';
+        }
+
+        function setLoading(loading) { DOM.loadingIndicator.style.display = loading ? 'flex' : 'none'; }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            const bgColor = type === 'success' ? 'var(--color-success)' : type === 'error' ? 'var(--color-error)' : 'var(--color-secondary)';
+            toast.style.cssText = `position:fixed;top:80px;right:20px;background:${bgColor};color:white;padding:12px 20px;border-radius:8px;z-index:10000;animation:toast-in 0.3s ease`;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.animation = 'toast-out 0.3s ease'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        function showAddPlayerError(msg, isError = true) {
+            DOM.addPlayerError.textContent = msg;
+            DOM.addPlayerError.style.display = msg ? 'block' : 'none';
+            DOM.addPlayerError.style.color = isError ? 'var(--color-error)' : 'var(--color-text-secondary)';
+        }
+
+        function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+        function renderPlayers() {
+            DOM.totalPlayers.textContent = players.length;
+            DOM.lastUpdated.textContent = players.length > 0 ? new Date().toLocaleString('ru-RU') : 'Никогда';
+            if (players.length === 0) {
+                DOM.playerRows.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏆</div><p>Список пуст. ${isHost ? 'Добавьте игроков в разделе управления.' : 'Ожидайте добавления игроков хостом.'}</p></div>`;
+                return;
+            }
+            players.sort((a, b) => (a.rank || 999999) - (b.rank || 999999));
+            let html = '';
+            players.forEach((player, index) => {
+                const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : 'rank-other';
+                const flag = getFlag(player.nationality);
+                const recordsCount = player.records ? player.records.length : 0;
+                html += `<div class="player-row" onclick="showPlayerProfile(${index})">
+                    <div class="cell cell-position ${rankClass}">${index + 1}</div>
+                    <div class="cell cell-player"><span class="player-flag">${flag}</span><div class="player-info"><span class="player-name">${escapeHtml(player.name)}</span><span class="player-score">${player.score ? player.score.toFixed(2) + ' pts' : '—'} · #${player.rank || '—'}</span></div></div>
+                    <div class="cell cell-points">${player.score ? player.score.toFixed(2) : '—'}</div>
+                    <div class="cell cell-records">${recordsCount}</div>
+                    ${isHost ? `<div class="cell cell-actions" onclick="event.stopPropagation(); handleRemovePlayer(${player.id})"><button class="btn btn-secondary btn-sm" style="padding: 4px 8px;">✕</button></div>` : ''}
+                </div>`;
+            });
+            DOM.playerRows.innerHTML = html;
+        }
+
+        async function showPlayerProfile(index) {
+            const player = players[index];
+            if (!player) return;
+            DOM.profileTitle.innerHTML = `${getFlag(player.nationality)} ${escapeHtml(player.name)}`;
+            const recordsHtml = player.records && player.records.length > 0 ? player.records
+                .filter(r => r.status === 'accepted' && r.level)
+                .map(r => {
+                    const demonName = r.level?.name || 'Unknown';
+                    const demonPlacement = r.level?.placement || '?';
+                    const percent = r.progress || 100;
+                    return `<div class="record-item"><span class="record-demon">${escapeHtml(demonName)} <span style="color:var(--color-text-muted);font-size:0.9em;">#${demonPlacement}</span></span><span class="record-progress ${percent >= 100 ? 'progress-100' : ''}">${percent}%</span></div>`;
+                }).join('') : '<p style="text-align:center;color:var(--color-text-muted);padding:var(--spacing-lg);">Нет записей</p>';
+            DOM.profileContent.innerHTML = `<div{}
+ class="profile-stats">
+                <div class="profile-stat"><div class="profile-stat-value">${player.score ? player.score.toFixed(2) : '—'}</div><div class="profile-stat-label">Очки</div></div>
+                <div class="profile-stat"><div class="profile-stat-value">#${player.rank || '—'}</div><div class="profile-stat-label">Глобальный топ</div></div>
+                <div class="profile-stat"><div class="profile-stat-value">#${index + 1}</div><div class="profile-stat-label">Локальный топ</div></div>
+            </div>
+            ${player.hardest ? `<div style="padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--color-border); background: var(--color-surface-2);"><span style="color: var(--color-text-muted); font-size: var(--font-size-sm);">Hardest:</span><span style="margin-left: var(--spacing-sm); font-weight: 600;">${escapeHtml(player.hardest.level?.name || player.hardest)}</span></div>` : ''}
+            <div style="padding: var(--spacing-md) var(--spacing-lg); border-bottom: 1px solid var(--color-border); background: var(--color-surface-2);"><span style="color: var(--color-text-muted); font-size: var(--font-size-sm);">Страна:</span><span style="margin-left: var(--spacing-sm);">${getFlag(player.nationality)} ${player.nationality || 'Не указана'}</span></div>
+            <div style="padding: var(--spacing-md) var(--spacing-lg);"><h4 style="margin: 0 0 var(--spacing-sm); font-size: var(--font-size-sm); color: var(--color-text-secondary);">Пройденные уровни (${player.records?.filter(r => r.status === 'accepted').length || 0})</h4><div class="profile-records">${recordsHtml}</div></div>
+            <div style="padding: var(--spacing-md) var(--spacing-lg); border-top: 1px solid var(--color-border);"><a href="https://demonlist.org/profile/${player.id}/" target="_blank" style="color: var(--color-secondary); font-size: var(--font-size-sm);">🔗 Открыть профиль на demonlist.org →</a></div>`;
+            DOM.profileModal.classList.add('active');
+        }
+
+        async function handleAddPlayer() {
+            const identifier = DOM.playerIdentifier.value.trim();
+            if (!identifier) { showAddPlayerError('Введите ID или никнейм', true); return; }
+            if (players.some(p => p.id == identifier || p.name.toLowerCase() === identifier.toLowerCase())) { showAddPlayerError('Игрок уже добавлен', true); return; }
+            showAddPlayerError('Поиск игрока...', false);
+            try {
+                const playerData = await fetchPlayerFromAPI(identifier);
+                await savePlayerToDB({ ...playerData, addedAt: Date.now() });
+                DOM.playerIdentifier.value = '';
+                showAddPlayerError('', false);
+                showToast(`Игрок "${playerData.name}" добавлен!`, 'success');
+            } catch (error) { showAddPlayerError(error.message || 'Ошибка поиска', true); }
+        }
+
+        async function handleRemovePlayer(playerId) {
+            if (confirm('Удалить игрока из списка?')) {
+                await removePlayerFromDB(playerId);
+                showToast('Игрок удалён');
+            }
+        }
+
+        async function refreshPlayers() {
+            setLoading(true);
+            let updated = 0;
+            for (let i = 0; i < players.length; i++) {
+                try {
+                    const data = await fetchPlayerFromAPI(players[i].name);
+                    await savePlayerToDB({ ...players[i], ...data });
+                    updated++;
+                } catch (e) { console.error(`Failed to refresh ${players[i].name}`); }
+            }
+            setLoading(false);
+            showToast(`Обновлено ${updated} из ${players.length} игроков`, 'success');
+        }
+
+        function showLoginModal() { DOM.loginModal.classList.add('active'); setTimeout(() => DOM.modalPassword.focus(), 100); }
+        function hideLoginModal() { DOM.loginModal.classList.remove('active'); DOM.modalPassword.value = ''; DOM.modalAuthError.style.display = 'none'; }
+
+        async function handleLogin() {
+            const password = DOM.modalPassword.value;
+            if (!password) { DOM.modalAuthError.textContent = 'Введите пароль'; DOM.modalAuthError.style.display = 'block'; return; }
+            DOM.modalLoginBtn.disabled = true;
+            DOM.modalLoginBtn.textContent = 'Проверка...';
+            const hashedInput = await hashPassword(password);
+            const valid = await login(password);
+            if (valid) {
+                // Сохраняем хэш пароля в сессии для проверки
+                localStorage.setItem(SESSION_KEY, JSON.stringify({
+                    hash: hashedInput,
+                    expires: Date.now() + 24 * 60 * 60 * 1000
+                }));
+                isHost = true;
+                hideLoginModal();
+                updateUI();
+                renderPlayers();
+                showToast('Добро пожаловать, хост!', 'success');
+            } else { DOM.modalAuthError.textContent = 'Неверный пароль'; DOM.modalAuthError.style.display = 'block'; }
+            DOM.modalLoginBtn.disabled = false;
+            DOM.modalLoginBtn.textContent = 'Войти';
+        }
+
+        DOM.hostBadge.addEventListener('click', logout);
+        DOM.addPlayerBtn.addEventListener('click', handleAddPlayer);
+        DOM.playerIdentifier.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleAddPlayer(); });
+        DOM.refreshBtn.addEventListener('click', refreshPlayers);
+        DOM.profileClose.addEventListener('click', () => DOM.profileModal.classList.remove('active'));
+        DOM.profileModal.addEventListener('click', (e) => { if (e.target === DOM.profileModal) DOM.profileModal.classList.remove('active'); });
+        DOM.infoButton.addEventListener('click', () => DOM.infoModal.classList.add('active'));
+        DOM.infoClose.addEventListener('click', () => DOM.infoModal.classList.remove('active'));
+        DOM.infoModal.addEventListener('click', (e) => { if (e.target === DOM.infoModal) DOM.infoModal.classList.remove('active'); });
+        DOM.modalLoginBtn.addEventListener('click', handleLogin);
+        DOM.modalPassword.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+        DOM.modalClose.addEventListener('click', hideLoginModal);
+        DOM.modalCancelBtn.addEventListener('click', hideLoginModal);
+        DOM.loginModal.addEventListener('click', (e) => { if (e.target === DOM.loginModal) hideLoginModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { DOM.profileModal.classList.remove('active'); DOM.infoModal.classList.remove('active'); DOM.loginModal.classList.remove('active'); } });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Auth state is now managed by HostAuth module
+            // isHost getter will automatically check auth status
+            await isLoggedIn(); // This verifies the session
+            updateUI();
+            loadPlayersFromDB();
+            console.log('GD Leaderboard initialized with Firebase');
+        });
+    </script>
+</body>
+
+</html>
