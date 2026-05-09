@@ -1,0 +1,184 @@
+/* 
+ * Leaderboard Table
+ */
+
+.leaderboard-table {
+    width: 100%;
+}
+
+/* Header row */
+.table-header {
+    display: grid;
+    grid-template-columns: 70px 1fr 130px 130px 90px;
+    background: linear-gradient(90deg, #003d7a, var(--color-secondary));
+    padding: 0 var(--spacing-md);
+}
+
+.header-cell {
+    padding: var(--spacing-md) var(--spacing-sm);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.header-cell.position {
+    text-align: center;
+}
+
+.header-cell.points,
+.header-cell.records {
+    text-align: right;
+}
+
+.header-cell.actions {
+    text-align: center;
+}
+
+/* Body */
+.table-body {
+    min-height: 180px;
+}
+
+/* Player row */
+.player-row {
+    display: grid;
+    grid-template-columns: 70px 1fr 130px 130px 90px;
+    padding: 0 var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    transition: background-color var(--transition-fast);
+    align-items: center;
+}
+
+.player-row:last-child {
+    border-bottom: none;
+}
+
+.player-row:hover {
+    background-color: var(--color-surface-2);
+}
+
+/* Cells */
+.cell {
+    padding: var(--spacing-md) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+}
+
+/* Position cell */
+.cell-position {
+    text-align: center;
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-lg);
+}
+
+.rank-1 {
+    color: var(--color-gold);
+}
+
+.rank-2 {
+    color: var(--color-silver);
+}
+
+.rank-3 {
+    color: var(--color-bronze);
+}
+
+.rank-other {
+    color: var(--color-text-muted);
+}
+
+/* Username cell */
+.cell-username {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.player-name {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+.player-badge {
+    font-size: var(--font-size-xs);
+    padding: 2px 6px;
+    border-radius: var(--border-radius-full);
+    background-color: var(--color-secondary-light);
+    color: var(--color-secondary);
+    font-weight: var(--font-weight-medium);
+}
+
+/* Points / Records */
+.cell-points,
+.cell-records {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.cell-points .value {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Actions */
+.cell-actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-xs);
+}
+
+/* Empty state */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-2xl) var(--spacing-xl);
+    text-align: center;
+    min-height: 180px;
+    gap: var(--spacing-sm);
+}
+
+.empty-state-icon {
+    font-size: 2.5rem;
+    opacity: 0.3;
+    margin-bottom: var(--spacing-sm);
+}
+
+.empty-state p {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    max-width: 320px;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+
+    .table-header,
+    .player-row {
+        grid-template-columns: 55px 1fr 100px 80px;
+    }
+
+    .header-cell.records,
+    .cell-records {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .table-header,
+    .player-row {
+        grid-template-columns: 50px 1fr 90px;
+    }
+
+    .header-cell.points,
+    .cell-points,
+    .header-cell.actions,
+    .cell-actions {
+        display: none;
+    }
+}
