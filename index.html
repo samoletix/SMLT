@@ -486,12 +486,8 @@
                 </div>
             </div>
             <div class="host-access-container">
-                <div id="host-login-btn" class="host-badge" style="display: flex;" onclick="showLoginModal()">
-                    <div class="avatar">🔐</div>
-                    <span>Вход хоста</span>
-                </div>
                 <div id="host-badge" class="host-badge" style="display: none;" onclick="logout()">
-                    <div class="avatar">👑</div>
+                    <div class="avatar">�</div>
                     <span>Хост (выход)</span>
                 </div>
             </div>
@@ -576,7 +572,11 @@
                     <p>Данные предоставлены <a href="https://demonlist.org" target="_blank"
                             rel="noopener noreferrer">Global Demonlist</a></p>
                 </div>
-                <div style="margin-top: var(--spacing-md);">
+                <div style="margin-top: var(--spacing-md); display: flex; gap: var(--spacing-sm); align-items: center;">
+                    <div id="host-login-btn" class="host-badge" style="display: flex;" onclick="showLoginModal()">
+                        <div class="avatar">🔐</div>
+                        <span>Вход хоста</span>
+                    </div>
                     <button id="info-button"
                         class="btn btn-secondary btn-sm"><span>ℹ️</span><span>Информация</span></button>
                 </div>
@@ -761,9 +761,7 @@
 
         async function login(password) {
             const hashedInput = await hashPassword(password);
-            // Хэш пароля "samoletik2024" - вычислен через SHA-256
-            const correctHash = 'c4951cc326d93924';
-            console.log('Input hash:', hashedInput);
+            const correctHash = '4eff0760cb4c802f';
             return hashedInput === correctHash;
         }
 

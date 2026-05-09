@@ -2,25 +2,25 @@
 <html>
 
 <head>
-    <title>Get Hash</title>
+    <title>Хэш пароля</title>
 </head>
 
-<body>
-    <h1>Вычисление хэша пароля</h1>
-    <input type="text" id="password" placeholder="Введите пароль" value="samoletik2024"
-        style="padding: 10px; font-size: 16px;">
-    <button onclick="calculateHash()" style="padding: 10px 20px; font-size: 16px;">Вычислить хэш</button>
-    <p id="result" style="font-size: 20px; font-weight: bold; color: green;"></p>
+<body style="font-family: Arial; padding: 50px;">
+    <h1>Вычисление хэша для пароля</h1>
+    <p>Пароль: <strong>samoletop1</strong></p>
+    <button onclick="calculateHash()" style="padding: 15px 30px; font-size: 18px; cursor: pointer;">Вычислить
+        хэш</button>
+    <p id="result" style="font-size: 24px; font-weight: bold; color: green; margin-top: 20px;"></p>
 
     <script>
         async function calculateHash() {
-            const password = document.getElementById('password').value;
+            const password = 'samoletop1';
             const encoder = new TextEncoder();
             const data = encoder.encode(password + 'smlt_salt_2024');
             const hashBuffer = await crypto.subtle.digest('SHA-256', data);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
-            document.getElementById('result').textContent = 'Хэш: ' + hash;
+            document.getElementById('result').innerHTML = 'Хэш: <code style="background:#f0f0f0;padding:5px 10px;">' + hash + '</code><br><br>Скопируй этот хэш и вставь в index.html в строку: <code>const correctHash = \'...\'</code>';
             console.log('Hash:', hash);
         }
     </script>
