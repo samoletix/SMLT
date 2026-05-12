@@ -28,6 +28,7 @@
             --font-size-md: 1rem;
             --font-size-lg: 1.25rem;
             --font-size-xl: 1.5rem;
+            --font-size-2xl: 2rem;
             --spacing-xs: 0.25rem;
             --spacing-sm: 0.5rem;
             --spacing-md: 1rem;
@@ -157,6 +158,91 @@
         .app-main {
             flex: 1;
             padding: var(--spacing-md) 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .stats-section {
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius-lg);
+            padding: var(--spacing-md);
+        }
+
+        .stats-section h3 {
+            font-size: var(--font-size-md);
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+            color: var(--color-text-primary);
+        }
+
+        .stats-grid-main {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-md);
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: var(--spacing-md);
+            background-color: var(--color-surface-2);
+            border-radius: var(--border-radius-md);
+        }
+
+        .stat-value {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--color-secondary);
+        }
+
+        .stat-label {
+            font-size: var(--font-size-xs);
+            color: var(--color-text-muted);
+            margin-top: var(--spacing-xs);
+        }
+
+        .country-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+        }
+
+        .country-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--border-radius-sm);
+        }
+
+        .country-item:hover {
+            background-color: var(--color-surface-2);
+        }
+
+        .country-info {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .country-flag {
+            font-size: 1.2rem;
+        }
+
+        .country-name {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-primary);
+        }
+
+        .country-count {
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            color: var(--color-secondary);
         }
 
         .leaderboard-section {
@@ -588,6 +674,15 @@
                 gap: var(--spacing-sm);
             }
 
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid-main {
+                grid-template-columns: repeat(3, 1fr);
+                gap: var(--spacing-sm);
+            }
+
             .table-header {
                 display: none;
             }
@@ -674,6 +769,35 @@
 
         <main class="app-main">
             <div class="container">
+                <!-- Статистика -->
+                <div class="stats-grid">
+                    <div class="stats-section">
+                        <h3>📊 Статистика</h3>
+                        <div class="stats-grid-main">
+                            <div class="stat-card">
+                                <div class="stat-value" id="statPlayers">-</div>
+                                <div class="stat-label">Игроков</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="statPoints">-</div>
+                                <div class="stat-label">Сумма очков</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="statHardest" style="font-size: var(--font-size-sm);">-</div>
+                                <div class="stat-label">Сложнейший уровень</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stats-section">
+                        <h3>🌍 По странам</h3>
+                        <div class="country-list" id="countryList">
+                            <div style="color: var(--color-text-muted); font-size: var(--font-size-sm);">Загрузка...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Таблица лидеров -->
                 <div class="leaderboard-section">
                     <div class="leaderboard-header">
                         <h2>Таблица лидеров</h2>
@@ -1020,6 +1144,77 @@
             });
 
             table.innerHTML = html;
+            renderStats();
+        }
+
+        function renderStats() {
+            // Количество игроков
+            document.getElementById('statPlayers').textContent = players.length;
+
+            // Сумма очков
+            const totalPoints = players.reduce((sum, p) => sum + (p.score || 0), 0);
+            document.getElementById('statPoints').textContent = totalPoints.toFixed(2);
+
+            // Сложнейший пройденный уровень (с самым низким placement = самый сложный)
+            let hardestLevel = null;
+            let hardestPlayer = null;
+            players.forEach(p => {
+                if (p.hardest && p.hardest.level) {
+                    if (!hardestLevel || p.hardest.level.placement < hardestLevel.placement) {
+                        hardestLevel = p.hardest.level;
+                        hardestPlayer = p;
+                    }
+                }
+            });
+
+            const hardestEl = document.getElementById('statHardest');
+            if (hardestLevel) {
+                hardestEl.textContent = hardestLevel.name;
+                hardestEl.title = `${hardestLevel.name} #${hardestLevel.placement} — ${hardestPlayer.name}`;
+            } else {
+                hardestEl.textContent = '—';
+            }
+
+            // Топ стран
+            renderCountryStats();
+        }
+
+        function renderCountryStats() {
+            const countryList = document.getElementById('countryList');
+
+            // Считаем игроков по странам
+            const countryCounts = {};
+            players.forEach(p => {
+                const country = p.nationality;
+                if (country) {
+                    const key = country.toLowerCase().trim();
+                    if (!countryCounts[key]) {
+                        countryCounts[key] = { name: country, count: 0 };
+                    }
+                    countryCounts[key].count++;
+                }
+            });
+
+            // Преобразуем в массив и сортируем по количеству
+            const sorted = Object.values(countryCounts).sort((a, b) => b.count - a.count);
+
+            if (sorted.length === 0) {
+                countryList.innerHTML = '<div style="color: var(--color-text-muted); font-size: var(--font-size-sm);">Нет данных</div>';
+                return;
+            }
+
+            let html = '';
+            sorted.forEach(c => {
+                html += `<div class="country-item">
+                    <div class="country-info">
+                        <span class="country-flag">${getFlag(c.name)}</span>
+                        <span class="country-name">${c.name}</span>
+                    </div>
+                    <span class="country-count">${c.count}</span>
+                </div>`;
+            });
+
+            countryList.innerHTML = html;
         }
 
         function showProfile(idx) {
