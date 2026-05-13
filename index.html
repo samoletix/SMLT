@@ -1000,6 +1000,20 @@
             return '';
         }
 
+        // Защита от XSS — экранирование HTML
+        function escapeHtml(text) {
+            if (text == null) return '';
+            const str = String(text);
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return str.replace(/[&<>"']/g, m => map[m]);
+        }
+
         function showToast(msg) {
             const t = document.createElement('div');
             t.className = 'toast toast-error';
@@ -1140,7 +1154,11 @@
             players.forEach((p, i) => {
                 const rc = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other';
                 const rec = p.records ? p.records.filter(r => r.status === 'accepted').length : 0;
-                html += `<div class="player-row" onclick="showProfile(${i})"><div class="cell cell-position ${rc}">${i + 1}</div><div class="cell cell-player"><span class="player-flag">${getFlag(p.nationality)}</span><div class="player-info"><span class="player-name">${p.name}</span><span class="player-score">${p.score ? p.score.toFixed(2) : '—'} pts · #${p.rank || '—'}</span></div></div><div class="cell cell-points">${p.score ? p.score.toFixed(2) : '—'}</div><div class="cell cell-records">${rec}</div></div>`;
+                const flag = getFlag(p.nationality);
+                const name = escapeHtml(p.name);
+                const score = p.score ? p.score.toFixed(2) : '—';
+                const rank = p.rank || '—';
+                html += `<div class="player-row" onclick="showProfile(${i})"><div class="cell cell-position ${rc}">${i + 1}</div><div class="cell cell-player"><span class="player-flag">${flag}</span><div class="player-info"><span class="player-name">${name}</span><span class="player-score">${score} pts · #${rank}</span></div></div><div class="cell cell-points">${score}</div><div class="cell cell-records">${rec}</div></div>`;
             });
 
             table.innerHTML = html;
@@ -1169,8 +1187,11 @@
 
             const hardestEl = document.getElementById('statHardest');
             if (hardestLevel) {
-                hardestEl.textContent = hardestLevel.name;
-                hardestEl.title = `${hardestLevel.name} #${hardestLevel.placement} — ${hardestPlayer.name}`;
+                // Используем textContent для защиты от XSS
+                const levelName = hardestLevel.name || '—';
+                const playerName = hardestPlayer ? hardestPlayer.name : '—';
+                hardestEl.textContent = levelName;
+                hardestEl.title = `${levelName} #${hardestLevel.placement} — ${playerName}`;
             } else {
                 hardestEl.textContent = '—';
             }
@@ -1205,10 +1226,12 @@
 
             let html = '';
             sorted.forEach(c => {
+                const flag = getFlag(c.name);
+                const countryName = escapeHtml(c.name);
                 html += `<div class="country-item">
                     <div class="country-info">
-                        <span class="country-flag">${getFlag(c.name)}</span>
-                        <span class="country-name">${c.name}</span>
+                        <span class="country-flag">${flag}</span>
+                        <span class="country-name">${countryName}</span>
                     </div>
                     <span class="country-count">${c.count}</span>
                 </div>`;
@@ -1221,13 +1244,29 @@
             const p = players[idx];
             if (!p) return;
             const rec = p.records ? p.records.filter(r => r.status === 'accepted' && r.level) : [];
-            document.getElementById('profileTitle').innerHTML = `${getFlag(p.nationality)} ${p.name}`;
-            let html = `<div class="profile-stats"><div class="profile-stat"><div class="profile-stat-value">${p.score ? p.score.toFixed(2) : '—'}</div><div class="profile-stat-label">Очки</div></div><div class="profile-stat"><div class="profile-stat-value">#${p.rank || '—'}</div><div class="profile-stat-label">Глобальный топ</div></div><div class="profile-stat"><div class="profile-stat-value">${rec.length}</div><div class="profile-stat-label">Уровней</div></div></div>`;
-            if (p.hardest) html += `<div class="profile-info-row"><span class="profile-info-label">Hardest:</span><span class="profile-info-value">${p.hardest.level?.name || p.hardest}</span></div>`;
-            html += `<div class="profile-info-row"><span class="profile-info-label">Страна:</span><span class="profile-info-value">${getFlag(p.nationality)} ${p.nationality || 'Не указана'}</span></div>`;
+            const flag = getFlag(p.nationality);
+            const name = escapeHtml(p.name);
+            document.getElementById('profileTitle').innerHTML = `${flag} ${name}`;
+
+            const score = p.score ? p.score.toFixed(2) : '—';
+            const rank = p.rank || '—';
+            let html = `<div class="profile-stats"><div class="profile-stat"><div class="profile-stat-value">${score}</div><div class="profile-stat-label">Очки</div></div><div class="profile-stat"><div class="profile-stat-value">#${rank}</div><div class="profile-stat-label">Глобальный топ</div></div><div class="profile-stat"><div class="profile-stat-value">${rec.length}</div><div class="profile-stat-label">Уровней</div></div></div>`;
+
+            if (p.hardest) {
+                const hardestName = escapeHtml(p.hardest.level?.name || p.hardest);
+                html += `<div class="profile-info-row"><span class="profile-info-label">Hardest:</span><span class="profile-info-value">${hardestName}</span></div>`;
+            }
+            const countryDisplay = escapeHtml(p.nationality || 'Не указана');
+            html += `<div class="profile-info-row"><span class="profile-info-label">Страна:</span><span class="profile-info-value">${flag} ${countryDisplay}</span></div>`;
             html += `<div class="profile-records-section"><h4>Пройденные уровни (${rec.length})</h4><div class="profile-records-list">`;
+
             if (rec.length > 0) {
-                rec.forEach(r => { html += `<div class="record-item"><span class="record-demon">${r.level?.name || 'Unknown'}<span class="record-placement">#${r.level?.placement || '?'}</span></span><span class="record-progress ${r.progress >= 100 ? 'progress-100' : ''}">${r.progress || 100}%</span></div>`; });
+                rec.forEach(r => {
+                    const levelName = escapeHtml(r.level?.name || 'Unknown');
+                    const placement = r.level?.placement || '?';
+                    const progress = r.progress || 100;
+                    html += `<div class="record-item"><span class="record-demon">${levelName}<span class="record-placement">#${placement}</span></span><span class="record-progress ${progress >= 100 ? 'progress-100' : ''}">${progress}%</span></div>`;
+                });
             } else { html += '<div class="no-records">Нет записей</div>'; }
             html += '</div></div>';
             html += `<div class="profile-link"><a href="https://demonlist.org/profile/${p.id}/" target="_blank" rel="noopener noreferrer">🔗 Показать аккаунт в Global Demonlist →</a></div>`;
