@@ -6,6 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="Таблица лидеров Geometry Dash — SMLT Community Edition">
     <meta name="theme-color" content="#0a0a0a">
+    <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self'; 
+    script-src 'self' 'unsafe-inline'; 
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
+    font-src 'self' https://fonts.gstatic.com; 
+    connect-src 'self' https://api.demonlist.org;
+    img-src 'self' data:;">
     <title>GD Leaderboard — SMLT</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,6 +57,8 @@
         }
 
         body {
+
+        
             font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
             background-color: var(--color-primary);
             color: var(--color-text-primary);
@@ -875,7 +884,13 @@
 
     <div id="toastContainer"></div>
 
+    <div id="error-message" style="display: none; color: #ff4d4d; background: #2a1111; padding: 15px; border-radius: 8px; margin: 20px; text-align: center; border: 1px solid #4d1111;">
+    Не удалось загрузить данные. Проверьте соединение или попробуйте позже.
+    </div>
+
     <script>
+
+        
         // ============================================
         // СПИСОК ИГРОКОВ - РЕДАКТИРУЙТЕ ЗДЕСЬ
         // ============================================
@@ -1070,17 +1085,21 @@
             } catch { return []; }
         }
 
-        async function loadAllPlayers() {
-            const table = document.getElementById('leaderboardTable');
-            const count = document.getElementById('playersCount');
+async function loadAllPlayers() {
+    const table = document.getElementById('leaderboardTable');
+    const count = document.getElementById('playersCount');
+    const errorEl = document.getElementById('error-message'); // Тот блок, который мы добавили
 
-            if (PLAYER_NAMES.length === 0) {
-                table.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏆</div><p>Список игроков пуст</p></div>';
-                count.textContent = '0 игроков';
-                return;
-            }
+    // 1. Скрываем прошлую ошибку перед новой попыткой
+    if (errorEl) errorEl.style.display = 'none';
 
-            players = [];
+    if (PLAYER_NAMES.length === 0) {
+        table.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏆</div><p>Список игроков пуст</p></div>';
+        count.textContent = '0 игроков';
+        return;
+    }
+
+    players = [];
             const loadedIds = new Set();
 
             // Загружаем всех игроков параллельно
@@ -1187,7 +1206,7 @@
 
             const hardestEl = document.getElementById('statHardest');
             if (hardestLevel) {
-                // Используем textContent для защиты от XSS
+
                 const levelName = hardestLevel.name || '—';
                 const playerName = hardestPlayer ? hardestPlayer.name : '—';
                 hardestEl.textContent = levelName;
@@ -1246,7 +1265,8 @@
             const rec = p.records ? p.records.filter(r => r.status === 'accepted' && r.level) : [];
             const flag = getFlag(p.nationality);
             const name = escapeHtml(p.name);
-            document.getElementById('profileTitle').innerHTML = `${flag} ${name}`;
+            const titleElement = document.getElementById('profileTitle');
+            titleElement.textContent = flag + " " + name;
 
             const score = p.score ? p.score.toFixed(2) : '—';
             const rank = p.rank || '—';
