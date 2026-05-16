@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Таблица лидеров Geometry Dash — SMLT Community Edition">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>Демонлист — SMLT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Кнопка смены темы -->
+        <button class="theme-toggle" id="themeToggle" title="Сменить тему">
+            <span class="theme-icon">🌙</span>
+        </button>
+
+        <!-- Кнопка хоста -->
+        <button class="host-btn host-btn-left" id="hostBtn" title="Войти как хост">
+            <span>Хост</span>
+        </button>
+
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-brand">
+                    <span class="header-logo">🏆</span>
+                    <div class="header-title">
+                        <h1>GD Leaderboard</h1>
+                        <span class="header-subtitle">SMLT Community Edition</span>
+                    </div>
+                </div>
+                <nav class="header-nav">
+                    <a href="index.html" class="nav-link">Главная</a>
+                    <a href="demonlist.html" class="nav-link active">Демонлист</a>
+                    <a href="projects.html" class="nav-link">Проекты</a>
+                </nav>
+                <div class="header-actions">
+                    <button class="btn btn-secondary btn-lg" onclick="showInfoModal()">
+                        <span>ℹ️</span>
+                        <span>Информация</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <div class="container">
+                <!-- Панель хоста для управления игроками -->
+                <div class="admin-panel admin-only" style="display: none;">
+                    <div class="admin-panel-header">👑 Управление игроками</div>
+                    <div class="admin-panel-content">
+                        <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="showAddPlayerModal()">➕ Добавить игрока</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Статистика -->
+                <div class="stats-grid">
+                    <div class="stats-section">
+                        <h3>📊 Статистика</h3>
+                        <div class="stats-grid-main">
+                            <div class="stat-card">
+                                <div class="stat-value" id="statPlayers">-</div>
+                                <div class="stat-label">Игроков</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="statPoints">-</div>
+                                <div class="stat-label">Сумма очков</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="statHardest" style="font-size: var(--font-size-sm);">-</div>
+                                <div class="stat-label">Сложнейший уровень</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stats-section">
+                        <h3>🌍 По странам</h3>
+                        <div class="country-list" id="countryList">
+                            <div style="color: var(--color-text-muted); font-size: var(--font-size-sm);">Загрузка...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Таблица лидеров -->
+                <div class="leaderboard-section">
+                    <div class="leaderboard-header">
+                        <h2>Таблица лидеров</h2>
+                        <div class="leaderboard-controls">
+                            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск по нику...">
+                            <div class="leaderboard-stats" id="playersCount">Загрузка...</div>
+                        </div>
+                    </div>
+                    <div class="leaderboard-table" id="leaderboardTable">
+                        <div class="loading-state">
+                            <div class="spinner"></div>
+                            <span class="loading-text" id="loadingText">Загрузка игроков...</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <!-- Модальное окно профиля -->
+    <div id="profileModal" class="modal-overlay" onclick="closeProfileModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="profileTitle">Профиль</div>
+                <button class="modal-close" onclick="closeProfileModal()">✕</button>
+            </div>
+            <div class="modal-body" id="profileBody"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно топа страны -->
+    <div id="countryModal" class="modal-overlay" onclick="closeCountryModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="countryTitle">Топ страны</div>
+                <button class="modal-close" onclick="closeCountryModal()">✕</button>
+            </div>
+            <div class="modal-body" id="countryBody"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно информации -->
+    <div id="infoModal" class="modal-overlay" onclick="closeInfoModal(event)">
+        <div class="modal" style="max-width: 480px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">📋 Информация</div>
+                <button class="modal-close" onclick="closeInfoModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-md);">
+                    <div
+                        style="padding: var(--spacing-md); background: var(--color-surface-2); border-radius: var(--border-radius-md);">
+                        <div
+                            style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                            Discord Server</div>
+                        <a href="https://discord.gg/VK56W7ZzdA" target="_blank"
+                            style="color: var(--color-secondary); font-weight: 600;">discord.gg/VK56W7ZzdA</a>
+                    </div>
+                    <div
+                        style="padding: var(--spacing-md); background: var(--color-surface-2); border-radius: var(--border-radius-md);">
+                        <div
+                            style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                            Admin</div>
+                        <div style="font-weight: 500;">Discord: <span
+                                style="color: var(--color-secondary);">@.samoletik</span></div>
+                        <div style="font-weight: 500; margin-top: var(--spacing-xs);">Telegram: <span
+                                style="color: var(--color-secondary);">@samoltik</span></div>
+                    </div>
+                    <div
+                        style="padding: var(--spacing-md); background: var(--color-surface-2); border-radius: var(--border-radius-md); border-left: 3px solid var(--color-success);">
+                        <div
+                            style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                            🔒 За безопасность отвечал</div>
+                        <div style="font-weight: 600; color: var(--color-secondary);">@rimix.98</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно входа хоста -->
+    <div id="hostModal" class="modal-overlay">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">🔐 Вход хоста</div>
+                <button class="modal-close" onclick="closeHostModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="hostPassword">Введите пароль:</label>
+                    <input type="password" id="hostPassword" class="form-input" placeholder="Пароль">
+                </div>
+                <button class="btn btn-primary" onclick="verifyHost(document.getElementById('hostPassword').value)">Войти</button>
+                <div id="hostError" class="error-message" style="display: none;">Неверный пароль!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно добавления игрока -->
+    <div id="addPlayerModal" class="modal-overlay">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">➕ Добавить игрока</div>
+                <button class="modal-close" onclick="closeAddPlayerModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="newPlayerName">Ник или айди в GDL:</label>
+                    <input type="text" id="newPlayerName" class="form-input" placeholder="Например: samoletik">
+                </div>
+                <div style="display: flex; gap: var(--spacing-sm);">
+                    <button class="btn btn-secondary" onclick="closeAddPlayerModal()">Отмена</button>
+                    <button class="btn btn-primary" onclick="addPlayer()">Добавить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Проекты SMLT - уровни и коллабы от участников сервера">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>Проекты SMLT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Кнопка смены темы -->
+        <button class="theme-toggle" id="themeToggle" title="Сменить тему">
+            <span class="theme-icon">🌙</span>
+        </button>
+
+        <!-- Кнопка хоста -->
+        <button class="host-btn host-btn-left" id="hostBtn" title="Войти как хост">
+            <span>Хост</span>
+        </button>
+
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-brand">
+                    <span class="header-logo">📁</span>
+                    <div class="header-title">
+                        <h1>Проекты SMLT</h1>
+                        <span class="header-subtitle">Уровни и коллабы</span>
+                    </div>
+                </div>
+                <nav class="header-nav">
+                    <a href="index.html" class="nav-link">Главная</a>
+                    <a href="demonlist.html" class="nav-link">Демонлист</a>
+                    <a href="projects.html" class="nav-link active">Проекты</a>
+                </nav>
+                <div class="header-actions">
+                    <button class="btn btn-secondary btn-lg" onclick="showInfoModal()">
+                        <span>ℹ️</span>
+                        <span>Информация</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <div class="container">
+                <!-- Панель хоста для управления проектами -->
+                <div class="admin-panel admin-only" style="display: none;">
+                    <div class="admin-panel-header">👑 Управление проектами</div>
+                    <div class="admin-panel-content">
+                        <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="showAddProjectModal()">➕ Добавить проект</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Информация о странице -->
+                <section class="info-section" style="padding-top: 0;">
+                    <div class="info-card" style="border-left: 3px solid var(--color-secondary);">
+                        <p style="color: var(--color-text-secondary); line-height: 1.7;">
+                            Здесь размещаются проекты участников SMLT - уровни, коллабы и другие творения.
+                            Каждый проект содержит информацию о статусе, участниках и ссылке на видео.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Статусы проектов -->
+                <section class="status-legend" style="margin-bottom: var(--spacing-lg);">
+                    <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-sm);">
+                        <span class="project-status status-ready">Готов</span>
+                        <span class="project-status status-verifying">В процессе верифа</span>
+                        <span class="project-status status-building">В процессе постройки</span>
+                        <span class="project-status status-planned">Планируется</span>
+                        <span class="project-status status-frozen">Заморожен</span>
+                        <span class="project-status status-dead">Мёртв</span>
+                    </div>
+                </section>
+
+                <!-- Сетка проектов -->
+                <div class="projects-grid" id="projectsGrid">
+                    <div class="loading-state" style="grid-column: 1 / -1;">
+                        <div class="spinner"></div>
+                        <span class="loading-text">Загрузка проектов...</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <!-- Модальное окно информации -->
+    <div id="infoModal" class="modal-overlay" onclick="closeInfoModal(event)">
+        <div class="modal" style="max-width: 480px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">📋 Информация</div>
+                <button class="modal-close" onclick="closeInfoModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-md);">
+                    <div
+                        style="padding: var(--spacing-md); background: var(--color-surface-2); border-radius: var(--border-radius-md);">
+                        <div
+                            style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                            Discord Server</div>
+                        <a href="https://discord.gg/VK56W7ZzdA" target="_blank"
+                            style="color: var(--color-secondary); font-weight: 600;">discord.gg/VK56W7ZzdA</a>
+                    </div>
+                    <div
+                        style="padding: var(--spacing-md); background: var(--color-surface-2); border-radius: var(--border-radius-md);">
+                        <div
+                            style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                            Admin</div>
+                        <div style="font-weight: 500;">Discord: <span
+                                style="color: var(--color-secondary);">@.samoletik</span></div>
+                        <div style="font-weight: 500; margin-top: var(--spacing-xs);">Telegram: <span
+                                style="color: var(--color-secondary);">@samoltik</span></div>
+                    </div>
+                    <div
+                        style="padding: var(--spacing-md); background: var(--color-surface-2); border-radius: var(--border-radius-md); border-left: 3px solid var(--color-success);">
+                        <div
+                            style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--spacing-xs);">
+                            🔒 За безопасность отвечал</div>
+                        <div style="font-weight: 600; color: var(--color-secondary);">@rimix.98</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно входа хоста -->
+    <div id="hostModal" class="modal-overlay">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">🔐 Вход хоста</div>
+                <button class="modal-close" onclick="closeHostModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="hostPassword">Введите пароль:</label>
+                    <input type="password" id="hostPassword" class="form-input" placeholder="Пароль">
+                </div>
+                <button class="btn btn-primary" onclick="verifyHost(document.getElementById('hostPassword').value)">Войти</button>
+                <div id="hostError" class="error-message" style="display: none;">Неверный пароль!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно добавления/редактирования проекта -->
+    <div id="projectModal" class="modal-overlay">
+        <div class="modal modal-lg" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="projectModalTitle">Добавить проект</div>
+                <button class="modal-close" onclick="closeProjectModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="projectForm">
+                    <input type="hidden" id="projectIndex" value="-1">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="projectName">Название проекта:</label>
+                            <input type="text" id="projectName" class="form-input"
+                                placeholder="Название уровня/коллаба">
+                        </div>
+                        <div class="form-group">
+                            <label for="projectId">ID уровня:</label>
+                            <input type="text" id="projectId" class="form-input" placeholder="ID в GD">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="projectVideo">Ссылка на видео (YouTube):</label>
+                        <input type="text" id="projectVideo" class="form-input"
+                            placeholder="https://youtube.com/watch?v=...">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="projectStatus">Статус:</label>
+                            <select id="projectStatus" class="form-select">
+                                <option value="планируется">Планируется</option>
+                                <option value="в процессе постройки">В процессе постройки</option>
+                                <option value="в процессе верифа">В процессе верифа</option>
+                                <option value="готов">Готов</option>
+                                <option value="заморожен">Заморожен</option>
+                                <option value="мёртв">Мёртв</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="projectVerifier">Кем верифнут:</label>
+                            <input type="text" id="projectVerifier" class="form-input" placeholder="Ник верифера">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="projectComment">Комментарий:</label>
+                        <textarea id="projectComment" class="form-textarea"
+                            placeholder="Дополнительная информация..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="projectParticipants">Участники (формат: Ник (Роль), через запятую):</label>
+                        <input type="text" id="projectParticipants" class="form-input"
+                            placeholder="Player1 (HOST), Player2 (DECO), Player3 (GP)">
+                        <div
+                            style="font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: var(--spacing-xs);">
+                            Роли: <span style="color: #ef4444;">HOST</span>, <span style="color: #06b6d4;">DECO</span>,
+                            <span style="color: #d4a574;">GP</span>, <span style="color: #eab308;">PLAYTEST</span>,
+                            <span style="color: #991b1b;">VERIFER</span>, <span style="color: #a855f7;">MERGER</span>,
+                            <span style="color: #f97316;">TRANSITION</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeProjectModal()">Отмена</button>
+                <button class="btn btn-primary" onclick="saveProject()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
