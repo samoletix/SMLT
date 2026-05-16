@@ -60,6 +60,53 @@
                     </div>
                 </div>
 
+                <!-- 2 колонки: Топ игроков + Топ уровней -->
+                <div class="demonlist-grid">
+                    <!-- Левая колонка: Топ игроков -->
+                    <div class="demonlist-column">
+                        <div class="leaderboard-section">
+                            <div class="leaderboard-header">
+                                <h2>🏆 Топ игроков</h2>
+                                <div class="leaderboard-controls">
+                                    <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск по нику...">
+                                    <div class="leaderboard-stats" id="playersCount">Загрузка...</div>
+                                </div>
+                            </div>
+                            <div class="leaderboard-table" id="leaderboardTable">
+                                <div class="loading-state">
+                                    <div class="spinner"></div>
+                                    <span class="loading-text" id="loadingText">Загрузка игроков...</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Правая колонка: Топ уровней -->
+                    <div class="demonlist-column">
+                        <div class="leaderboard-section">
+                            <div class="leaderboard-header">
+                                <h2>📔 Топ уровней</h2>
+                                <div class="leaderboard-controls">
+                                    <input type="text" id="levelSearchInput" class="search-input" placeholder="🔍 Поиск по уровню...">
+                                    <div class="leaderboard-stats" id="levelsCount">Загрузка...</div>
+                                </div>
+                            </div>
+                            <div class="leaderboard-table" id="levelsTable">
+                                <div class="loading-state">
+                                    <div class="spinner"></div>
+                                    <span class="loading-text">Загрузка уровней...</span>
+                                </div>
+                            </div>
+                            <div id="expandLevelsContainer" style="display: none; padding: var(--spacing-sm); text-align: center; border-top: 1px solid var(--color-border);">
+                                <button class="btn btn-secondary btn-sm" onclick="expandLevels()">Показать ещё</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Статистика -->
                 <div class="stats-grid">
                     <div class="stats-section">
@@ -83,26 +130,6 @@
                         <h3>🌍 По странам</h3>
                         <div class="country-list" id="countryList">
                             <div style="color: var(--color-text-muted); font-size: var(--font-size-sm);">Загрузка...
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Таблица лидеров -->
-                <div class="leaderboard-section">
-                    <div class="leaderboard-header">
-                        <h2>Таблица лидеров</h2>
-                        <div class="leaderboard-controls">
-                            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск по нику...">
-                            <div class="leaderboard-stats" id="playersCount">Загрузка...</div>
-                        </div>
-                    </div>
-                    <div class="leaderboard-table" id="leaderboardTable">
-                        <div class="loading-state">
-                            <div class="spinner"></div>
-                            <span class="loading-text" id="loadingText">Загрузка игроков...</span>
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
                             </div>
                         </div>
                     </div>
@@ -131,6 +158,17 @@
                 <button class="modal-close" onclick="closeCountryModal()">✕</button>
             </div>
             <div class="modal-body" id="countryBody"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно викторов уровня -->
+    <div id="levelModal" class="modal-overlay" onclick="closeLevelModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="levelTitle">Викторы уровня</div>
+                <button class="modal-close" onclick="closeLevelModal()">✕</button>
+            </div>
+            <div class="modal-body" id="levelBody"></div>
         </div>
     </div>
 

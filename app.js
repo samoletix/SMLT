@@ -54,6 +54,7 @@ let isHost = false;
 let players = [];
 let projects = [];
 let allPlayers = [];
+let levels = [];
 
 // ============================================
 // ИНИЦИАЛИЗАЦИЯ
@@ -109,6 +110,14 @@ function initEventListeners() {
         });
     }
 
+    // Поиск по уровням
+    const levelSearchInput = document.getElementById('levelSearchInput');
+    if (levelSearchInput) {
+        levelSearchInput.addEventListener('input', (e) => {
+            filterLevels(e.target.value);
+        });
+    }
+
     // Enter для входа хоста
     const hostPassword = document.getElementById('hostPassword');
     if (hostPassword) {
@@ -133,9 +142,19 @@ function initTheme() {
 function toggleTheme() {
     const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    // Add transition animation
+    document.body.classList.add('theme-transitioning');
+    
+    // Change theme
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('smlt-theme', newTheme);
     updateThemeIcon(newTheme);
+    
+    // Remove transition class after animation completes
+    setTimeout(() => {
+        document.body.classList.remove('theme-transitioning');
+    }, 300);
 }
 
 function updateThemeIcon(theme) {
@@ -179,45 +198,33 @@ function closeHostModal() {
     }
 }
 
-
 const HOST_PASSWORD_HASH = '68065907241f7ace65827881f4142a7f898de23e6a4f72cda44e2c67cad61b9e';
 
-// 2. Полностью заменяем функцию проверки на эту:
 function verifyHost(inputPassword) {
-    // Превращаем введенный текст в байты для хэширования
     const msgBuffer = new TextEncoder().encode(inputPassword);
     
-    // Запускаем встроенное в браузер крипто-хэширование SHA-256
     crypto.subtle.digest('SHA-256', msgBuffer).then(hashBuffer => {
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         const inputHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-        // Проверяем совпадение хэшей
         if (inputHash === HOST_PASSWORD_HASH) {
             isHost = true;
             sessionStorage.setItem('smlt-host', 'true');
             
-            // Проверяем, есть ли встроенная функция уведомлений (Toast)
             if (typeof showToast === 'function') {
                 showToast('Доступ предоставлен! Вы вошли как хост.', 'success');
             } else {
                 alert('Доступ предоставлен!');
             }
 
-            // Закрываем модальное окно хоста
             const modal = document.getElementById('hostModal');
             if (modal) modal.classList.remove('active');
 
-            // Обновляем интерфейс
             updateHostButton();
             updateAdminControls();
 
-            // --- АВТОМАТИЧЕСКИЙ ЗАПУСК ИНТЕРФЕЙСА САМОЛЁТИКА ---
-            // Включаем отображение админки (вызываем функции, которые есть в app.js)
             if (typeof renderProjects === 'function') renderProjects();
-            if (typeof closeAuthModal === 'function') closeAuthModal(); // если есть окно авторизации
             
-            // Если у него модалка закрывается как-то иначе, принудительно обновляем интерфейс
             const authModal = document.getElementById('authModal') || document.getElementById('loginModal');
             if (authModal) authModal.classList.remove('active');
 
@@ -266,7 +273,6 @@ function updateAdminControls() {
 // ДЕМОНЛИСТ
 // ============================================
 
-// Список игроков - редактируется хостом
 const DEFAULT_PLAYER_NAMES = [
     "samoletik", "paradoxiz", "clokman", "itzslxnq", "H30n41k_GmD",
     "Filkoty", "DarBeast", "Florned", "Marzyiiik", "euphoriak8",
@@ -295,24 +301,12 @@ function getFlag(c) {
     return '';
 }
 
-function escapeHtml(text) {
-    if (text == null) return '';
-    const str = String(text);
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return str.replace(/[&<>"']/g, m => map[m]);
-}
-
 function showToast(msg, type = 'error') {
     const t = document.createElement('div');
     t.className = `toast toast-${type}`;
     t.textContent = msg;
-    document.getElementById('toastContainer').appendChild(t);
+    const container = document.getElementById('toastContainer');
+    if (container) container.appendChild(t);
     setTimeout(() => t.remove(), 5000);
 }
 
@@ -362,9 +356,11 @@ async function loadAllPlayers() {
     const count = document.getElementById('playersCount');
     const playerNames = getPlayerNames();
 
+    if (!table) return;
+
     if (playerNames.length === 0) {
         table.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏆</div><p>Список игроков пуст</p></div>';
-        count.textContent = '0 игроков';
+        if (count) count.textContent = '0 игроков';
         return;
     }
 
@@ -414,10 +410,10 @@ async function loadAllPlayers() {
         }
     }
 
-    // Сортировка по рангу (с меньшей стороны - лучшие первые)
     players.sort((a, b) => (a.rank || 999999) - (b.rank || 999999));
     allPlayers = [...players];
     renderPlayers();
+    renderHardestLevels();
 
     if (errors.length > 0) {
         showToast(`Не найдены: ${errors.join(', ')}`);
@@ -441,13 +437,14 @@ function filterPlayers(query) {
 function renderPlayers() {
     const table = document.getElementById('leaderboardTable');
     const count = document.getElementById('playersCount');
+    if (!table) return;
 
     if (players.length === 0) {
         table.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏆</div><p>Игроки не найдены</p></div>';
         return;
     }
 
-    count.textContent = `${players.length} игроков`;
+    if (count) count.textContent = `${players.length} игроков`;
     let html = '<div class="table-header"><div class="cell cell-position">#</div><div class="cell cell-player">Игрок</div><div class="cell cell-points">Очки</div><div class="cell cell-records">Hardest</div></div>';
 
     players.forEach((p, i) => {
@@ -457,7 +454,6 @@ function renderPlayers() {
         const score = p.score ? p.score.toFixed(2) : '—';
         const rank = p.rank || '—';
 
-        // Самый сложный уровень
         let hardestDisplay = '—';
         if (p.hardest && p.hardest.level) {
             hardestDisplay = escapeHtml(p.hardest.level.name || 'Unknown');
@@ -482,10 +478,14 @@ function renderPlayers() {
 }
 
 function renderStats() {
-    document.getElementById('statPlayers').textContent = players.length;
+    const statPlayers = document.getElementById('statPlayers');
+    const statPoints = document.getElementById('statPoints');
+    const statHardest = document.getElementById('statHardest');
+
+    if (statPlayers) statPlayers.textContent = players.length;
 
     const totalPoints = players.reduce((sum, p) => sum + (p.score || 0), 0);
-    document.getElementById('statPoints').textContent = totalPoints.toFixed(2);
+    if (statPoints) statPoints.textContent = totalPoints.toFixed(2);
 
     let hardestLevel = null;
     let hardestPlayer = null;
@@ -569,7 +569,6 @@ function showCountryTop(country) {
     } else {
         let html = '<div class="country-top-list">';
         countryPlayers.forEach((p, idx) => {
-            const flag = getFlag(p.nationality);
             const name = escapeHtml(p.name);
             const score = p.score ? p.score.toFixed(2) : '—';
             const rank = p.rank || '—';
@@ -587,6 +586,187 @@ function showCountryTop(country) {
 
 function closeCountryModal() {
     const modal = document.getElementById('countryModal');
+    if (modal) modal.classList.remove('active');
+}
+
+function renderHardestLevels() {
+    const levelsTable = document.getElementById('levelsTable');
+    const levelsCount = document.getElementById('levelsCount');
+    const expandContainer = document.getElementById('expandLevelsContainer');
+
+    if (!levelsTable) return;
+
+    // Collect all completed levels from all players
+    const levelMap = new Map();
+    
+    players.forEach(player => {
+        if (player.records) {
+            player.records.forEach(record => {
+                if (record.status === 'accepted' && record.level) {
+                    const levelId = record.level.id;
+                    const levelName = record.level.name;
+                    const placement = record.level.placement;
+                    
+                    if (!levelMap.has(levelId)) {
+                        levelMap.set(levelId, {
+                            id: levelId,
+                            name: levelName,
+                            placement: placement,
+                            victors: []
+                        });
+                    }
+                    
+                    // Add player to victors if not already added
+                    const levelData = levelMap.get(levelId);
+                    if (!levelData.victors.find(v => v.id === player.id)) {
+                        levelData.victors.push({
+                            id: player.id,
+                            name: player.name,
+                            nationality: player.nationality
+                        });
+                    }
+                }
+            });
+        }
+    });
+
+    // Sort levels by placement (lower placement = harder)
+    const sortedLevels = Array.from(levelMap.values())
+        .filter(level => level.placement !== undefined && level.placement !== null)
+        .sort((a, b) => a.placement - b.placement);
+
+    if (sortedLevels.length === 0) {
+        levelsTable.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏆</div><p>Нет данных об уровнях</p></div>';
+        if (levelsCount) levelsCount.textContent = '0 уровней';
+        if (expandContainer) expandContainer.style.display = 'none';
+        return;
+    }
+
+    if (levelsCount) levelsCount.textContent = `${sortedLevels.length} уровней`;
+
+    // Store all levels and show only first 39
+    window.allLevels = sortedLevels;
+    window.isLevelsExpanded = false;
+    
+    renderLevelsList(sortedLevels.slice(0, 39));
+    
+    // Show expand button if there are more than 39 levels
+    if (expandContainer) {
+        expandContainer.style.display = sortedLevels.length > 39 ? 'block' : 'none';
+    }
+    
+    // Store level data for modal
+    window.levelData = levelMap;
+}
+
+function renderLevelsList(levels) {
+    const levelsTable = document.getElementById('levelsTable');
+    if (!levelsTable) return;
+
+    let html = '<div class="table-header"><div class="cell cell-position">#</div><div class="cell cell-player">Уровень</div><div class="cell cell-points">Позиция</div><div class="cell cell-records">Викторов</div></div>';
+
+    levels.forEach((level, i) => {
+        const rc = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other';
+        const levelName = escapeHtml(level.name);
+        const placement = level.placement;
+        const victorCount = level.victors.length;
+
+        html += `<div class="player-row" onclick="showLevelVictors('${escapeHtml(level.id)}')">
+            <div class="cell cell-position ${rc}">${i + 1}</div>
+            <div class="cell cell-player">
+                <div class="player-info">
+                    <span class="player-name">${levelName}</span>
+                </div>
+            </div>
+            <div class="cell cell-points">#${placement}</div>
+            <div class="cell cell-records">${victorCount}</div>
+        </div>`;
+    });
+
+    levelsTable.innerHTML = html;
+}
+
+function expandLevels() {
+    const expandContainer = document.getElementById('expandLevelsContainer');
+    const expandButton = expandContainer?.querySelector('button');
+    if (!window.allLevels) return;
+    
+    if (window.isLevelsExpanded) {
+        // Collapse
+        window.isLevelsExpanded = false;
+        renderLevelsList(window.allLevels.slice(0, 39));
+        if (expandButton) expandButton.textContent = 'Показать ещё';
+    } else {
+        // Expand
+        window.isLevelsExpanded = true;
+        renderLevelsList(window.allLevels);
+        if (expandButton) expandButton.textContent = 'Свернуть';
+    }
+}
+
+function filterLevels(query) {
+    if (!window.allLevels) return;
+    
+    if (!query) {
+        // Show first 39 levels when search is cleared
+        window.isLevelsExpanded = false;
+        renderLevelsList(window.allLevels.slice(0, 39));
+        
+        const expandContainer = document.getElementById('expandLevelsContainer');
+        const expandButton = expandContainer?.querySelector('button');
+        if (expandContainer) {
+            expandContainer.style.display = window.allLevels.length > 39 ? 'block' : 'none';
+        }
+        if (expandButton) expandButton.textContent = 'Показать ещё';
+        return;
+    }
+    
+    const q = query.toLowerCase().trim();
+    const filtered = window.allLevels.filter(level => 
+        level.name.toLowerCase().includes(q)
+    );
+    
+    renderLevelsList(filtered);
+    
+    // Hide expand button during search
+    const expandContainer = document.getElementById('expandLevelsContainer');
+    if (expandContainer) {
+        expandContainer.style.display = 'none';
+    }
+}
+
+function showLevelVictors(levelId) {
+    const levelData = window.levelData?.get(levelId);
+    if (!levelData) return;
+
+    const modal = document.getElementById('levelModal');
+    const title = document.getElementById('levelTitle');
+    const body = document.getElementById('levelBody');
+
+    if (!modal || !title || !body) return;
+
+    title.textContent = `🏆 ${escapeHtml(levelData.name)} #${levelData.placement}`;
+
+    if (levelData.victors.length === 0) {
+        body.innerHTML = '<p style="color: var(--color-text-muted);">Нет викторов</p>';
+    } else {
+        let html = '<div class="level-victors-list">';
+        levelData.victors.forEach((victor, idx) => {
+            const flag = getFlag(victor.nationality);
+            const name = escapeHtml(victor.name);
+            html += `<div class="level-victor-item" style="display: flex; justify-content: space-between; padding: var(--spacing-sm); border-bottom: 1px solid var(--color-border);">
+                <span><strong>#${idx + 1}</strong> ${flag} ${name}</span>
+            </div>`;
+        });
+        html += '</div>';
+        body.innerHTML = html;
+    }
+
+    modal.classList.add('active');
+}
+
+function closeLevelModal() {
+    const modal = document.getElementById('levelModal');
     if (modal) modal.classList.remove('active');
 }
 
@@ -769,7 +949,7 @@ function renderProjects() {
                     <a href="https://www.youtube.com/watch?v=${escapeHtml(project.videoId)}" target="_blank" rel="noopener noreferrer" style="font-size: var(--font-size-xs); color: var(--color-secondary);">🔗 Открыть на YouTube</a>
                 </div>`
                 : `<div class="project-video"><div class="project-video-placeholder">🎬</div></div>`}
-            </div>
+            
             <div class="project-content">
                 <h3 class="project-title">${escapeHtml(project.name || `Проект #${idx + 1}`)}</h3>
                 <div class="project-info">
@@ -794,18 +974,18 @@ function renderProjects() {
                     <div class="project-participants-title">Участники:</div>
                     <div class="project-participants-list">
                         ${(project.participants || []).map(p => {
-                    const match = p.match(/^(.+?)\s*\((.+?)\)$/);
-                    if (match) {
-                        const name = match[1].trim();
-                        const roles = match[2].split(',').map(r => r.trim());
-                        const rolesHtml = roles.map(role => {
-                            const roleClass = getRoleClass(role);
-                            return `<span class="role ${roleClass}">${role}</span>`;
-                        }).join(', ');
-                        return `<span class="participant-tag">${escapeHtml(name)} - (${rolesHtml})</span>`;
-                    }
-                    return `<span class="participant-tag">${escapeHtml(p)}</span>`;
-                }).join('')}
+                            const match = p.match(/^(.+?)\s*\((.+?)\)$/);
+                            if (match) {
+                                const name = match[1].trim();
+                                const roles = match[2].split(',').map(r => r.trim());
+                                const rolesHtml = roles.map(role => {
+                                    const roleClass = getRoleClass(role);
+                                    return `<span class="role ${escapeHtml(roleClass)}">${escapeHtml(role)}</span>`;
+                                }).join(', ');
+                                return `<span class="participant-tag">${escapeHtml(name)} - (${rolesHtml})</span>`;
+                            }
+                            return `<span class="participant-tag">${escapeHtml(p)}</span>`;
+                        }).join('')}
                     </div>
                 </div>
                 ${isHost ? `<div class="project-actions">
@@ -934,7 +1114,6 @@ function deleteProject(idx) {
 function extractVideoId(url) {
     if (!url) return '';
 
-    // YouTube URL patterns
     const patterns = [
         /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
         /^([a-zA-Z0-9_-]{11})$/
@@ -949,7 +1128,7 @@ function extractVideoId(url) {
 }
 
 // ============================================
-// ИНФОРМАЦИЯ
+// ИНФОРМАЦИЯ И УТИЛИТЫ
 // ============================================
 
 function showInfoModal() {
@@ -963,6 +1142,7 @@ function closeInfoModal(e) {
         if (modal) modal.classList.remove('active');
     }
 }
+
 async function sha256(message) {
     const msgBuffer = new TextEncoder().encode(message);                    
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);

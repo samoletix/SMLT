@@ -67,6 +67,26 @@ body {
     line-height: 1.5;
     min-height: 100vh;
     overflow-x: hidden;
+    transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+body.theme-transitioning {
+    animation: themeFade 0.3s ease-in-out;
+}
+
+@keyframes themeFade {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(0.98);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 #app {
@@ -425,6 +445,18 @@ a:hover {
     margin-bottom: var(--spacing-md);
 }
 
+/* === Demonlist Grid (2 Columns) === */
+.demonlist-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.demonlist-column {
+    min-width: 0;
+}
+
 .stats-section {
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -507,6 +539,17 @@ a:hover {
 }
 
 /* === Leaderboard === */
+.demonlist-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.demonlist-column {
+    min-width: 0;
+}
+
 .leaderboard-section {
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -592,14 +635,14 @@ a:hover {
 }
 
 .cell {
-    padding: var(--spacing-md) var(--spacing-sm);
-    font-size: var(--font-size-sm);
+    padding: var(--spacing-sm) var(--spacing-xs);
+    font-size: var(--font-size-xs);
 }
 
 .cell-position {
     text-align: center;
     font-weight: 700;
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-md);
 }
 
 .rank-1 {
@@ -863,11 +906,12 @@ a:hover {
     border-radius: var(--border-radius-lg);
     width: 100%;
     max-width: 500px;
-    max-height: 90vh;
+    max-height: 85vh;
     overflow: hidden;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     transform: translateY(20px);
     transition: transform var(--transition-normal);
+    margin: var(--spacing-md);
 }
 
 .modal-overlay.active .modal {
@@ -1290,6 +1334,10 @@ a:hover {
     .nav-link {
         padding: var(--spacing-xs) var(--spacing-sm);
         font-size: var(--font-size-xs);
+    }
+
+    .demonlist-grid {
+        grid-template-columns: 1fr;
     }
 
     .stats-grid {
