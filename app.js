@@ -6,7 +6,8 @@
 // КОНСТАНТЫ И КОНФИГУРАЦИЯ
 // ============================================
 
-const API_BASE = 'https://api.demonlist.org';
+const API_BASE = 'https://api.demonlist.org'; // API Демонлиста
+const BACKEND_API = 'http://localhost:8080/api'; // Подтягивание бекенда
 
 // Флаги стран (эмодзи)
 const FLAGS = {
@@ -50,7 +51,9 @@ const COUNTRY_TO_CODE = {
 // СОСТОЯНИЕ ПРИЛОЖЕНИЯ
 // ============================================
 
-let isHost = false;
+let authToken = sessionStorage.getItem('smlt_auth_token') || null;
+let isHost = !!authToken; // Если есть токен, считаем хостом до проверки
+
 let players = [];
 let projects = [];
 let allPlayers = [];
@@ -65,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initHostStatus();
     initEventListeners();
 
-    // Загружаем данные в зависимости от страницы
+    // Загружаем данные с бэкенда в зависимости от страницы
     if (document.getElementById('leaderboardTable')) {
         loadAllPlayers();
     }
@@ -75,56 +78,37 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initEventListeners() {
-    // Кнопка смены темы
     const themeToggle = document.getElementById('themeToggle');
-    if (themeToggle) {
-        themeToggle.addEventListener('click', toggleTheme);
-    }
+    if (themeToggle) themeToggle.addEventListener('click', toggleTheme);
 
-    // Кнопка хоста
     const hostBtn = document.getElementById('hostBtn');
     if (hostBtn) {
         hostBtn.addEventListener('click', () => {
-            if (isHost) {
-                logoutHost();
-            } else {
-                showHostModal();
-            }
+            if (isHost) logoutHost();
+            else showHostModal();
         });
     }
 
-    // Закрытие модалок по клику на оверлей
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                overlay.classList.remove('active');
-            }
+            if (e.target === overlay) overlay.classList.remove('active');
         });
     });
 
-    // Поиск по демонлисту
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            filterPlayers(e.target.value);
-        });
+        searchInput.addEventListener('input', (e) => filterPlayers(e.target.value));
     }
 
-    // Поиск по уровням
     const levelSearchInput = document.getElementById('levelSearchInput');
     if (levelSearchInput) {
-        levelSearchInput.addEventListener('input', (e) => {
-            filterLevels(e.target.value);
-        });
+        levelSearchInput.addEventListener('input', (e) => filterLevels(e.target.value));
     }
 
-    // Enter для входа хоста
     const hostPassword = document.getElementById('hostPassword');
     if (hostPassword) {
         hostPassword.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                verifyHost(hostPassword.value);
-            }
+            if (e.key === 'Enter') verifyHost(hostPassword.value);
         });
     }   
 }
@@ -143,33 +127,24 @@ function toggleTheme() {
     const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     
-    // Add transition animation
     document.body.classList.add('theme-transitioning');
-    
-    // Change theme
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('smlt-theme', newTheme);
     updateThemeIcon(newTheme);
     
-    // Remove transition class after animation completes
-    setTimeout(() => {
-        document.body.classList.remove('theme-transitioning');
-    }, 300);
+    setTimeout(() => document.body.classList.remove('theme-transitioning'), 300);
 }
 
 function updateThemeIcon(theme) {
     const themeIcon = document.querySelector('.theme-icon');
-    if (themeIcon) {
-        themeIcon.textContent = theme === 'dark' ? '🌙' : '☀️';
-    }
+    if (themeIcon) themeIcon.textContent = theme === 'dark' ? '🌙' : '☀️';
 }
 
 // ============================================
-// ХОСТ АВТОРИЗАЦИЯ
+// ХОСТ АВТОРИЗАЦИЯ 
 // ============================================
 
 function initHostStatus() {
-    isHost = sessionStorage.getItem('smlt-host') === 'true';
     updateHostButton();
     updateAdminControls();
 }
@@ -185,65 +160,55 @@ function showHostModal() {
             passwordInput.value = '';
             passwordInput.focus();
         }
-        if (errorEl) {
-            errorEl.style.display = 'none';
-        }
+        if (errorEl) errorEl.style.display = 'none';
     }
 }
 
 function closeHostModal() {
     const modal = document.getElementById('hostModal');
-    if (modal) {
-        modal.classList.remove('active');
-    }
+    if (modal) modal.classList.remove('active');
 }
 
-const HOST_PASSWORD_HASH = '68065907241f7ace65827881f4142a7f898de23e6a4f72cda44e2c67cad61b9e';
+// НОВАЯ: Отправляет пароль на бэкенд и получает токен
+async function verifyHost(inputPassword) {
+    if (!inputPassword) return;
 
-function verifyHost(inputPassword) {
-    const msgBuffer = new TextEncoder().encode(inputPassword);
-    
-    crypto.subtle.digest('SHA-256', msgBuffer).then(hashBuffer => {
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const inputHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    try {
+        const response = await fetch(`${BACKEND_API}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: inputPassword })
+        });
 
-        if (inputHash === HOST_PASSWORD_HASH) {
+        const data = await response.json();
+
+        if (response.ok && data.token) {
+            authToken = data.token;
+            sessionStorage.setItem('smlt_auth_token', data.token);
             isHost = true;
-            sessionStorage.setItem('smlt-host', 'true');
             
-            if (typeof showToast === 'function') {
-                showToast('Доступ предоставлен! Вы вошли как хост.', 'success');
-            } else {
-                alert('Доступ предоставлен!');
-            }
-
-            const modal = document.getElementById('hostModal');
-            if (modal) modal.classList.remove('active');
-
+            showToast('Доступ предоставлен сервером!', 'success');
+            closeHostModal();
             updateHostButton();
             updateAdminControls();
-
-            if (typeof renderProjects === 'function') renderProjects();
             
             const authModal = document.getElementById('authModal') || document.getElementById('loginModal');
             if (authModal) authModal.classList.remove('active');
 
         } else {
-            if (typeof showToast === 'function') {
-                showToast('Неверный пароль хоста!', 'error');
-            } else {
-                alert('Неверный пароль хоста!');
-            }
+            showToast(data.error || 'Неверный пароль хоста!', 'error');
             isHost = false;
         }
-    }).catch(err => {
-        console.error('Ошибка безопасности:', err);
-    });
+    } catch (err) {
+        console.error('Ошибка авторизации:', err);
+        showToast('Сервер бэкенда недоступен', 'error');
+    }
 }
 
 function logoutHost() {
+    authToken = null;
     isHost = false;
-    sessionStorage.removeItem('smlt-host');
+    sessionStorage.removeItem('smlt_auth_token');
     updateHostButton();
     updateAdminControls();
     showToast('Вы вышли из режима хоста', 'info');
@@ -270,52 +235,53 @@ function updateAdminControls() {
 }
 
 // ============================================
-// ДЕМОНЛИСТ
+// ДЕМОНЛИСТ И ИГРОКИ 
 // ============================================
 
 const DEFAULT_PLAYER_NAMES = [
-    "samoletik", "paradoxiz", "clokman", "itzslxnq", "H30n41k_GmD",
-    "Filkoty", "DarBeast", "Florned", "Marzyiiik", "euphoriak8",
-    "npoctou_gamer", "NopanicGD", "CandyCloud22", "Vakum", "Daggit",
-    "Loran", "tapxyhh", "SerGio", "Fanim59", "prostoymofficial",
-    "toxik blaze", "NatrixGMD", "toxatort", "SpaceRS", "yeahme",
-    "Спини", "Linqwq", "RossceorpGD", "69liqu69"
+    "Florned", "SpaceRS", "npoctou_gamer", "Toxik Blaze", "euphoriak8", "CandyCloud22", "samoletik", "Vakum", "linqwq", "SerGio", "H30n41k_GmD", "yeahme", "69liqu69", "Спини", "RossceorpGD", "Tapxyhh", "NopanicGD", "NatrixGMD", "toxaTort", "Marzyiiik", "Daggit", "ParadoXiZ", "itzslxnq", "Clokman", "Filkoty", "Fanim59", "Loran", "prostoymofficial", "DarBeast"
 ];
 
-function getPlayerNames() {
-    const saved = localStorage.getItem('smlt-players');
-    return saved ? JSON.parse(saved) : DEFAULT_PLAYER_NAMES;
+// НОВАЯ: Запрашиваем список ников с нашего бэкенда
+async function getPlayerNames() {
+    try {
+        const res = await fetch(`${BACKEND_API}/players`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.length > 0) return data;
+        }
+    } catch (e) {
+        console.warn('Не удалось загрузить игроков с бэка. Используем дефолт.');
+    }
+    return DEFAULT_PLAYER_NAMES;
 }
 
-function savePlayerNames(names) {
-    localStorage.setItem('smlt-players', JSON.stringify(names));
+// НОВАЯ: Защищенное сохранение ников в БД
+async function savePlayerNamesToServer(names) {
+    if (!authToken) return false;
+    try {
+        const res = await fetch(`${BACKEND_API}/admin/players`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(names)
+        });
+
+        if (res.status === 401 || res.status === 403) {
+            showToast('Сессия истекла. Войдите снова.', 'error');
+            logoutHost();
+            return false;
+        }
+        return res.ok;
+    } catch (e) {
+        showToast('Ошибка сети при сохранении', 'error');
+        return false;
+    }
 }
 
-function getFlag(c) {
-    if (!c) return '';
-    const upper = c.toUpperCase();
-    if (FLAGS[upper]) return FLAGS[upper];
-    const lower = c.toLowerCase().trim();
-    const code = COUNTRY_TO_CODE[lower];
-    if (code && FLAGS[code]) return FLAGS[code];
-    return '';
-}
-
-function showToast(msg, type = 'error') {
-    const t = document.createElement('div');
-    t.className = `toast toast-${type}`;
-    t.textContent = msg;
-    const container = document.getElementById('toastContainer');
-    if (container) container.appendChild(t);
-    setTimeout(() => t.remove(), 5000);
-}
-
-function updateProgress(current, total) {
-    const progressFill = document.getElementById('progressFill');
-    const loadingText = document.getElementById('loadingText');
-    if (progressFill) progressFill.style.width = Math.round((current / total) * 100) + '%';
-    if (loadingText) loadingText.textContent = `Загрузка ${current}/${total} игроков...`;
-}
+// --- Функции Demonlist API остаются без изменений ---
 
 async function fetchPlayerData(name) {
     try {
@@ -354,7 +320,9 @@ async function fetchRecords(id) {
 async function loadAllPlayers() {
     const table = document.getElementById('leaderboardTable');
     const count = document.getElementById('playersCount');
-    const playerNames = getPlayerNames();
+    
+    // Ждем получения списка из БД
+    const playerNames = await getPlayerNames();
 
     if (!table) return;
 
@@ -403,11 +371,8 @@ async function loadAllPlayers() {
 
     const errors = [];
     for (const result of results) {
-        if (result && result.error) {
-            errors.push(result.error);
-        } else if (result) {
-            players.push(result);
-        }
+        if (result && result.error) errors.push(result.error);
+        else if (result) players.push(result);
     }
 
     players.sort((a, b) => (a.rank || 999999) - (b.rank || 999999));
@@ -415,19 +380,15 @@ async function loadAllPlayers() {
     renderPlayers();
     renderHardestLevels();
 
-    if (errors.length > 0) {
-        showToast(`Не найдены: ${errors.join(', ')}`);
-    }
-
-    if (players.length === 0) {
-        table.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏆</div><p>Не удалось загрузить данные игроков</p></div>';
-    }
+    if (errors.length > 0) showToast(`Не найдены: ${errors.join(', ')}`);
+    if (players.length === 0) table.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏆</div><p>Не удалось загрузить данные игроков</p></div>';
 }
 
+// --- Отрисовка таблиц и статистики остается без изменений ---
+
 function filterPlayers(query) {
-    if (!query) {
-        players = [...allPlayers];
-    } else {
+    if (!query) players = [...allPlayers];
+    else {
         const q = query.toLowerCase().trim();
         players = allPlayers.filter(p => p.name.toLowerCase().includes(q));
     }
@@ -455,9 +416,7 @@ function renderPlayers() {
         const rank = p.rank || '—';
 
         let hardestDisplay = '—';
-        if (p.hardest && p.hardest.level) {
-            hardestDisplay = escapeHtml(p.hardest.level.name || 'Unknown');
-        }
+        if (p.hardest && p.hardest.level) hardestDisplay = escapeHtml(p.hardest.level.name || 'Unknown');
 
         html += `<div class="player-row" onclick="showProfile(${i})">
             <div class="cell cell-position ${rc}">${i + 1}</div>
@@ -519,9 +478,7 @@ function renderCountryStats() {
         const country = p.nationality;
         if (country) {
             const key = country.toLowerCase().trim();
-            if (!countryCounts[key]) {
-                countryCounts[key] = { name: country, count: 0, players: [] };
-            }
+            if (!countryCounts[key]) countryCounts[key] = { name: country, count: 0, players: [] };
             countryCounts[key].count++;
             countryCounts[key].players.push(p);
         }
@@ -535,7 +492,7 @@ function renderCountryStats() {
     }
 
     let html = '';
-    sorted.forEach((c, idx) => {
+    sorted.forEach(c => {
         const flag = getFlag(c.name);
         const countryName = escapeHtml(c.name);
         html += `<div class="country-item" onclick="showCountryTop('${escapeHtml(c.name)}')" style="cursor: pointer;" title="Топ игроков ${countryName}">
@@ -596,41 +553,24 @@ function renderHardestLevels() {
 
     if (!levelsTable) return;
 
-    // Collect all completed levels from all players
     const levelMap = new Map();
-    
     players.forEach(player => {
         if (player.records) {
             player.records.forEach(record => {
                 if (record.status === 'accepted' && record.level) {
                     const levelId = record.level.id;
-                    const levelName = record.level.name;
-                    const placement = record.level.placement;
-                    
                     if (!levelMap.has(levelId)) {
-                        levelMap.set(levelId, {
-                            id: levelId,
-                            name: levelName,
-                            placement: placement,
-                            victors: []
-                        });
+                        levelMap.set(levelId, { id: levelId, name: record.level.name, placement: record.level.placement, victors: [] });
                     }
-                    
-                    // Add player to victors if not already added
                     const levelData = levelMap.get(levelId);
                     if (!levelData.victors.find(v => v.id === player.id)) {
-                        levelData.victors.push({
-                            id: player.id,
-                            name: player.name,
-                            nationality: player.nationality
-                        });
+                        levelData.victors.push({ id: player.id, name: player.name, nationality: player.nationality });
                     }
                 }
             });
         }
     });
 
-    // Sort levels by placement (lower placement = harder)
     const sortedLevels = Array.from(levelMap.values())
         .filter(level => level.placement !== undefined && level.placement !== null)
         .sort((a, b) => a.placement - b.placement);
@@ -644,18 +584,14 @@ function renderHardestLevels() {
 
     if (levelsCount) levelsCount.textContent = `${sortedLevels.length} уровней`;
 
-    // Store all levels and show only first 39
     window.allLevels = sortedLevels;
     window.isLevelsExpanded = false;
     
     renderLevelsList(sortedLevels.slice(0, 39));
     
-    // Show expand button if there are more than 39 levels
     if (expandContainer) {
         expandContainer.style.display = sortedLevels.length > 39 ? 'block' : 'none';
     }
-    
-    // Store level data for modal
     window.levelData = levelMap;
 }
 
@@ -667,22 +603,15 @@ function renderLevelsList(levels) {
 
     levels.forEach((level, i) => {
         const rc = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other';
-        const levelName = escapeHtml(level.name);
-        const placement = level.placement;
-        const victorCount = level.victors.length;
-
         html += `<div class="player-row" onclick="showLevelVictors('${escapeHtml(level.id)}')">
             <div class="cell cell-position ${rc}">${i + 1}</div>
             <div class="cell cell-player">
-                <div class="player-info">
-                    <span class="player-name">${levelName}</span>
-                </div>
+                <div class="player-info"><span class="player-name">${escapeHtml(level.name)}</span></div>
             </div>
-            <div class="cell cell-points">#${placement}</div>
-            <div class="cell cell-records">${victorCount}</div>
+            <div class="cell cell-points">#${level.placement}</div>
+            <div class="cell cell-records">${level.victors.length}</div>
         </div>`;
     });
-
     levelsTable.innerHTML = html;
 }
 
@@ -692,12 +621,10 @@ function expandLevels() {
     if (!window.allLevels) return;
     
     if (window.isLevelsExpanded) {
-        // Collapse
         window.isLevelsExpanded = false;
         renderLevelsList(window.allLevels.slice(0, 39));
         if (expandButton) expandButton.textContent = 'Показать ещё';
     } else {
-        // Expand
         window.isLevelsExpanded = true;
         renderLevelsList(window.allLevels);
         if (expandButton) expandButton.textContent = 'Свернуть';
@@ -708,31 +635,21 @@ function filterLevels(query) {
     if (!window.allLevels) return;
     
     if (!query) {
-        // Show first 39 levels when search is cleared
         window.isLevelsExpanded = false;
         renderLevelsList(window.allLevels.slice(0, 39));
-        
         const expandContainer = document.getElementById('expandLevelsContainer');
         const expandButton = expandContainer?.querySelector('button');
-        if (expandContainer) {
-            expandContainer.style.display = window.allLevels.length > 39 ? 'block' : 'none';
-        }
+        if (expandContainer) expandContainer.style.display = window.allLevels.length > 39 ? 'block' : 'none';
         if (expandButton) expandButton.textContent = 'Показать ещё';
         return;
     }
     
     const q = query.toLowerCase().trim();
-    const filtered = window.allLevels.filter(level => 
-        level.name.toLowerCase().includes(q)
-    );
-    
+    const filtered = window.allLevels.filter(level => level.name.toLowerCase().includes(q));
     renderLevelsList(filtered);
     
-    // Hide expand button during search
     const expandContainer = document.getElementById('expandLevelsContainer');
-    if (expandContainer) {
-        expandContainer.style.display = 'none';
-    }
+    if (expandContainer) expandContainer.style.display = 'none';
 }
 
 function showLevelVictors(levelId) {
@@ -752,16 +669,13 @@ function showLevelVictors(levelId) {
     } else {
         let html = '<div class="level-victors-list">';
         levelData.victors.forEach((victor, idx) => {
-            const flag = getFlag(victor.nationality);
-            const name = escapeHtml(victor.name);
             html += `<div class="level-victor-item" style="display: flex; justify-content: space-between; padding: var(--spacing-sm); border-bottom: 1px solid var(--color-border);">
-                <span><strong>#${idx + 1}</strong> ${flag} ${name}</span>
+                <span><strong>#${idx + 1}</strong> ${getFlag(victor.nationality)} ${escapeHtml(victor.name)}</span>
             </div>`;
         });
         html += '</div>';
         body.innerHTML = html;
     }
-
     modal.classList.add('active');
 }
 
@@ -784,46 +698,24 @@ function showProfile(idx) {
     const rank = p.rank || '—';
 
     let html = `<div class="profile-stats">
-        <div class="profile-stat">
-            <div class="profile-stat-value">${score}</div>
-            <div class="profile-stat-label">Очки</div>
-        </div>
-        <div class="profile-stat">
-            <div class="profile-stat-value">#${rank}</div>
-            <div class="profile-stat-label">Глобальный топ</div>
-        </div>
-        <div class="profile-stat">
-            <div class="profile-stat-value">${rec.length}</div>
-            <div class="profile-stat-label">Уровней</div>
-        </div>
+        <div class="profile-stat"><div class="profile-stat-value">${score}</div><div class="profile-stat-label">Очки</div></div>
+        <div class="profile-stat"><div class="profile-stat-value">#${rank}</div><div class="profile-stat-label">Глобальный топ</div></div>
+        <div class="profile-stat"><div class="profile-stat-value">${rec.length}</div><div class="profile-stat-label">Уровней</div></div>
     </div>`;
 
     if (p.hardest) {
-        const hardestName = escapeHtml(p.hardest.level?.name || p.hardest);
-        html += `<div class="profile-info-row">
-            <span class="profile-info-label">Hardest:</span>
-            <span class="profile-info-value">${hardestName}</span>
-        </div>`;
+        html += `<div class="profile-info-row"><span class="profile-info-label">Hardest:</span><span class="profile-info-value">${escapeHtml(p.hardest.level?.name || p.hardest)}</span></div>`;
     }
 
-    const countryDisplay = escapeHtml(p.nationality || 'Не указана');
-    html += `<div class="profile-info-row">
-        <span class="profile-info-label">Страна:</span>
-        <span class="profile-info-value">${flag} ${countryDisplay}</span>
-    </div>`;
+    html += `<div class="profile-info-row"><span class="profile-info-label">Страна:</span><span class="profile-info-value">${flag} ${escapeHtml(p.nationality || 'Не указана')}</span></div>`;
 
-    html += `<div class="profile-records-section">
-        <h4>Пройденные уровни (${rec.length})</h4>
-        <div class="profile-records-list">`;
+    html += `<div class="profile-records-section"><h4>Пройденные уровни (${rec.length})</h4><div class="profile-records-list">`;
 
     if (rec.length > 0) {
         rec.forEach(r => {
-            const levelName = escapeHtml(r.level?.name || 'Unknown');
-            const placement = r.level?.placement || '?';
-            const progress = r.progress || 100;
             html += `<div class="record-item">
-                <span class="record-demon">${levelName}<span class="record-placement">#${placement}</span></span>
-                <span class="record-progress ${progress >= 100 ? 'progress-100' : ''}">${progress}%</span>
+                <span class="record-demon">${escapeHtml(r.level?.name || 'Unknown')}<span class="record-placement">#${r.level?.placement || '?'}</span></span>
+                <span class="record-progress ${r.progress >= 100 ? 'progress-100' : ''}">${r.progress || 100}%</span>
             </div>`;
         });
     } else {
@@ -831,9 +723,7 @@ function showProfile(idx) {
     }
 
     html += '</div></div>';
-    html += `<div class="profile-link">
-        <a href="https://demonlist.org/profile/${p.id}/" target="_blank" rel="noopener noreferrer">🔗 Показать аккаунт в Global Demonlist →</a>
-    </div>`;
+    html += `<div class="profile-link"><a href="https://demonlist.org/profile/${p.id}/" target="_blank" rel="noopener noreferrer">🔗 Показать аккаунт в Global Demonlist →</a></div>`;
 
     document.getElementById('profileBody').innerHTML = html;
     document.getElementById('profileModal').classList.add('active');
@@ -850,11 +740,7 @@ function closeProfileModal(e) {
 // ============================================
 
 function showAddPlayerModal() {
-    if (!isHost) {
-        showToast('Только хост может добавлять игроков', 'error');
-        return;
-    }
-
+    if (!isHost) return showToast('Только хост может добавлять игроков', 'error');
     const modal = document.getElementById('addPlayerModal');
     if (modal) {
         document.getElementById('newPlayerName').value = '';
@@ -867,41 +753,41 @@ function closeAddPlayerModal() {
     if (modal) modal.classList.remove('active');
 }
 
-function addPlayer() {
+// Изменено на async + работа с сервером
+async function addPlayer() {
     const nameInput = document.getElementById('newPlayerName');
     const name = nameInput.value.trim();
 
-    if (!name) {
-        showToast('Введите имя игрока', 'error');
-        return;
-    }
+    if (!name) return showToast('Введите имя игрока', 'error');
 
-    const playerNames = getPlayerNames();
+    const playerNames = await getPlayerNames();
     if (playerNames.map(n => n.toLowerCase()).includes(name.toLowerCase())) {
-        showToast('Игрок уже есть в списке', 'error');
-        return;
+        return showToast('Игрок уже есть в списке', 'error');
     }
 
     playerNames.push(name);
-    savePlayerNames(playerNames);
-    closeAddPlayerModal();
-    loadAllPlayers();
-    showToast(`Игрок "${name}" добавлен!`, 'success');
+    const success = await savePlayerNamesToServer(playerNames);
+    
+    if (success) {
+        closeAddPlayerModal();
+        showToast(`Игрок "${name}" добавлен! Загружаем...`, 'info');
+        loadAllPlayers(); // Перезагружаем UI
+    }
 }
 
-function removePlayer(name) {
-    if (!isHost) {
-        showToast('Только хост может удалять игроков', 'error');
-        return;
-    }
-
+// Изменено на async + работа с сервером
+async function removePlayer(name) {
+    if (!isHost) return showToast('Только хост может удалять игроков', 'error');
     if (!confirm(`Удалить игрока "${name}"?`)) return;
 
-    let playerNames = getPlayerNames();
+    let playerNames = await getPlayerNames();
     playerNames = playerNames.filter(n => n.toLowerCase() !== name.toLowerCase());
-    savePlayerNames(playerNames);
-    loadAllPlayers();
-    showToast(`Игрок "${name}" удалён`, 'success');
+    
+    const success = await savePlayerNamesToServer(playerNames);
+    if (success) {
+        showToast(`Игрок "${name}" удалён`, 'success');
+        loadAllPlayers(); // Перезагружаем UI
+    }
 }
 
 // ============================================
@@ -910,65 +796,77 @@ function removePlayer(name) {
 
 const DEFAULT_PROJECTS = [];
 
-function getProjects() {
-    const saved = localStorage.getItem('smlt-projects');
-    return saved ? JSON.parse(saved) : DEFAULT_PROJECTS;
-}
-
-function saveProjects(data) {
-    localStorage.setItem('smlt-projects', JSON.stringify(data));
-}
-
-function loadProjects() {
-    projects = getProjects();
+// НОВАЯ: Грузим проекты с сервера
+async function loadProjects() {
+    try {
+        const res = await fetch(`${BACKEND_API}/projects`);
+        if (res.ok) {
+            projects = await res.json();
+        } else {
+            projects = DEFAULT_PROJECTS;
+        }
+    } catch (e) {
+        console.warn('Сервер недоступен, берем пустые проекты');
+        projects = DEFAULT_PROJECTS;
+    }
     renderProjects();
+}
+
+// НОВАЯ: Сохраняем проекты на сервер
+async function saveProjectsToServer() {
+    if (!authToken) {
+        showToast('Только хост может менять проекты', 'error');
+        return false;
+    }
+    try {
+        const res = await fetch(`${BACKEND_API}/admin/projects`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(projects)
+        });
+
+        if (res.status === 401 || res.status === 403) {
+            showToast('Сессия истекла', 'error');
+            logoutHost();
+            return false;
+        }
+        return res.ok;
+    } catch (e) {
+        showToast('Ошибка сохранения', 'error');
+        return false;
+    }
 }
 
 function renderProjects() {
     const grid = document.getElementById('projectsGrid');
     if (!grid) return;
 
-    if (projects.length === 0) {
-        grid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">
-            <div class="empty-state-icon">📁</div>
-            <p>Проектов пока нет</p>
-        </div>`;
+    if (!projects || projects.length === 0) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;"><div class="empty-state-icon">📁</div><p>Проектов пока нет</p></div>`;
         return;
     }
 
     let html = '';
     projects.forEach((project, idx) => {
         const statusClass = getStatusClass(project.status);
-
         html += `<div class="project-card">
             ${project.videoId
-                ? `<div class="project-video">
-                    <iframe src="https://www.youtube.com/embed/${escapeHtml(project.videoId)}?rel=0" frameborder="0" allowfullscreen allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin"></iframe>
-                </div>
+                ? `<div class="project-video"><iframe src="https://www.youtube.com/embed/${escapeHtml(project.videoId)}?rel=0" frameborder="0" allowfullscreen></iframe></div>
                 <div style="padding: var(--spacing-xs) var(--spacing-md); background: var(--color-surface-2); text-align: center;">
-                    <a href="https://www.youtube.com/watch?v=${escapeHtml(project.videoId)}" target="_blank" rel="noopener noreferrer" style="font-size: var(--font-size-xs); color: var(--color-secondary);">🔗 Открыть на YouTube</a>
+                    <a href="https://www.youtube.com/watch?v=${escapeHtml(project.videoId)}" target="_blank" style="font-size: var(--font-size-xs); color: var(--color-secondary);">🔗 Открыть на YouTube</a>
                 </div>`
                 : `<div class="project-video"><div class="project-video-placeholder">🎬</div></div>`}
             
             <div class="project-content">
                 <h3 class="project-title">${escapeHtml(project.name || `Проект #${idx + 1}`)}</h3>
                 <div class="project-info">
-                    <div class="project-info-item">
-                        <span class="project-info-label">ID:</span>
-                        <span class="project-info-value">${escapeHtml(project.id || '—')}</span>
-                    </div>
-                    <div class="project-info-item">
-                        <span class="project-info-label">Статус:</span>
-                        <span class="project-status ${statusClass}">${escapeHtml(project.status || 'планируется')}</span>
-                    </div>
-                    <div class="project-info-item">
-                        <span class="project-info-label">Верифнут:</span>
-                        <span class="project-info-value">${escapeHtml(project.verifier || '—')}</span>
-                    </div>
-                    ${project.comment ? `<div class="project-info-item">
-                        <span class="project-info-label">Коммент:</span>
-                        <span class="project-info-value">${escapeHtml(project.comment)}</span>
-                    </div>` : ''}
+                    <div class="project-info-item"><span class="project-info-label">ID:</span><span class="project-info-value">${escapeHtml(project.id || '—')}</span></div>
+                    <div class="project-info-item"><span class="project-info-label">Статус:</span><span class="project-status ${statusClass}">${escapeHtml(project.status || 'планируется')}</span></div>
+                    <div class="project-info-item"><span class="project-info-label">Верифнут:</span><span class="project-info-value">${escapeHtml(project.verifier || '—')}</span></div>
+                    ${project.comment ? `<div class="project-info-item"><span class="project-info-label">Коммент:</span><span class="project-info-value">${escapeHtml(project.comment)}</span></div>` : ''}
                 </div>
                 <div class="project-participants">
                     <div class="project-participants-title">Участники:</div>
@@ -977,11 +875,7 @@ function renderProjects() {
                             const match = p.match(/^(.+?)\s*\((.+?)\)$/);
                             if (match) {
                                 const name = match[1].trim();
-                                const roles = match[2].split(',').map(r => r.trim());
-                                const rolesHtml = roles.map(role => {
-                                    const roleClass = getRoleClass(role);
-                                    return `<span class="role ${escapeHtml(roleClass)}">${escapeHtml(role)}</span>`;
-                                }).join(', ');
+                                const rolesHtml = match[2].split(',').map(r => `<span class="role ${getRoleClass(r.trim())}">${escapeHtml(r.trim())}</span>`).join(', ');
                                 return `<span class="participant-tag">${escapeHtml(name)} - (${rolesHtml})</span>`;
                             }
                             return `<span class="participant-tag">${escapeHtml(p)}</span>`;
@@ -995,44 +889,23 @@ function renderProjects() {
             </div>
         </div>`;
     });
-
     grid.innerHTML = html;
 }
 
 function getStatusClass(status) {
-    const classes = {
-        'готов': 'status-ready',
-        'в процессе верифа': 'status-verifying',
-        'в процессе постройки': 'status-building',
-        'планируется': 'status-planned',
-        'заморожен': 'status-frozen',
-        'мёртв': 'status-dead'
-    };
+    const classes = { 'готов': 'status-ready', 'в процессе верифа': 'status-verifying', 'в процессе постройки': 'status-building', 'планируется': 'status-planned', 'заморожен': 'status-frozen', 'мёртв': 'status-dead' };
     return classes[status?.toLowerCase()] || 'status-planned';
 }
 
 function getRoleClass(role) {
-    const roleMap = {
-        'HOST': 'role-host',
-        'DECO': 'role-deco',
-        'GP': 'role-gp',
-        'PLAYTEST': 'role-playtest',
-        'VERIFER': 'role-verifer',
-        'MERGER': 'role-merger',
-        'TRANSITION': 'role-transition'
-    };
+    const roleMap = { 'HOST': 'role-host', 'DECO': 'role-deco', 'GP': 'role-gp', 'PLAYTEST': 'role-playtest', 'VERIFER': 'role-verifer', 'MERGER': 'role-merger', 'TRANSITION': 'role-transition' };
     return roleMap[role.toUpperCase()] || '';
 }
 
 function showAddProjectModal() {
-    if (!isHost) {
-        showToast('Только хост может добавлять проекты', 'error');
-        return;
-    }
-
+    if (!isHost) return showToast('Только хост может добавлять проекты', 'error');
     const modal = document.getElementById('projectModal');
     const form = document.getElementById('projectForm');
-
     if (modal && form) {
         form.reset();
         document.getElementById('projectIndex').value = '-1';
@@ -1047,11 +920,7 @@ function closeProjectModal() {
 }
 
 function editProject(idx) {
-    if (!isHost) {
-        showToast('Только хост может редактировать проекты', 'error');
-        return;
-    }
-
+    if (!isHost) return showToast('Только хост может редактировать проекты', 'error');
     const project = projects[idx];
     if (!project) return;
 
@@ -1064,11 +933,11 @@ function editProject(idx) {
     document.getElementById('projectStatus').value = project.status || 'планируется';
     document.getElementById('projectVerifier').value = project.verifier || '';
     document.getElementById('projectParticipants').value = (project.participants || []).join(', ');
-
     document.getElementById('projectModal').classList.add('active');
 }
 
-function saveProject() {
+// Изменено на async + работа с сервером
+async function saveProject() {
     const idx = parseInt(document.getElementById('projectIndex').value);
 
     const project = {
@@ -1078,52 +947,47 @@ function saveProject() {
         comment: document.getElementById('projectComment').value.trim(),
         status: document.getElementById('projectStatus').value,
         verifier: document.getElementById('projectVerifier').value.trim(),
-        participants: document.getElementById('projectParticipants').value
-            .split(',')
-            .map(p => p.trim())
-            .filter(p => p)
+        participants: document.getElementById('projectParticipants').value.split(',').map(p => p.trim()).filter(p => p)
     };
 
-    if (idx === -1) {
-        projects.push(project);
-        showToast('Проект добавлен!', 'success');
-    } else {
-        projects[idx] = project;
-        showToast('Проект обновлён!', 'success');
-    }
+    if (idx === -1) projects.push(project);
+    else projects[idx] = project;
 
-    saveProjects(projects);
-    closeProjectModal();
-    renderProjects();
+    const success = await saveProjectsToServer();
+    if (success) {
+        showToast(idx === -1 ? 'Проект добавлен!' : 'Проект обновлён!', 'success');
+        closeProjectModal();
+        renderProjects();
+    } else {
+        // Если ошибка на бэке, откатываем изменения локально (просто перезагружаем проекты)
+        loadProjects();
+    }
 }
 
-function deleteProject(idx) {
-    if (!isHost) {
-        showToast('Только хост может удалять проекты', 'error');
-        return;
-    }
-
+// Изменено на async + работа с сервером
+async function deleteProject(idx) {
+    if (!isHost) return showToast('Только хост может удалять проекты', 'error');
     if (!confirm('Удалить этот проект?')) return;
 
-    projects.splice(idx, 1);
-    saveProjects(projects);
-    renderProjects();
-    showToast('Проект удалён', 'success');
+    const removedProject = projects.splice(idx, 1)[0];
+    const success = await saveProjectsToServer();
+    
+    if (success) {
+        renderProjects();
+        showToast('Проект удалён', 'success');
+    } else {
+        projects.splice(idx, 0, removedProject); // Откат если ошибка
+        renderProjects();
+    }
 }
 
 function extractVideoId(url) {
     if (!url) return '';
-
-    const patterns = [
-        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-        /^([a-zA-Z0-9_-]{11})$/
-    ];
-
+    const patterns = [ /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/, /^([a-zA-Z0-9_-]{11})$/ ];
     for (const pattern of patterns) {
         const match = url.match(pattern);
         if (match) return match[1];
     }
-
     return url;
 }
 
@@ -1143,20 +1007,33 @@ function closeInfoModal(e) {
     }
 }
 
-async function sha256(message) {
-    const msgBuffer = new TextEncoder().encode(message);                    
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+function getFlag(c) {
+    if (!c) return '';
+    const upper = c.toUpperCase();
+    if (FLAGS[upper]) return FLAGS[upper];
+    const lower = c.toLowerCase().trim();
+    const code = COUNTRY_TO_CODE[lower];
+    if (code && FLAGS[code]) return FLAGS[code];
+    return '';
+}
+
+function showToast(msg, type = 'error') {
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`;
+    t.textContent = msg;
+    const container = document.getElementById('toastContainer');
+    if (container) container.appendChild(t);
+    setTimeout(() => t.remove(), 5000);
+}
+
+function updateProgress(current, total) {
+    const progressFill = document.getElementById('progressFill');
+    const loadingText = document.getElementById('loadingText');
+    if (progressFill) progressFill.style.width = Math.round((current / total) * 100) + '%';
+    if (loadingText) loadingText.textContent = `Загрузка ${current}/${total} игроков...`;
 }
 
 function escapeHtml(text) {
     if (!text) return '';
-    return text
-        .toString()
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    return text.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
