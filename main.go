@@ -15,12 +15,10 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-// Секретный ключ для подписи JWT-токенов (смени на свой!)
-var jwtSecret = []byte("super-secure-smlt-secret-key-2026")
+var jwtSecret = []byte("7d8a2f4c9b1e3f5a6c0d8e7b4a2f1c3d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b_SMLT_SECURE_2026")
 
-// Правильный хэш пароля хоста (SHA-256). Хранится ТОЛЬКО здесь, на сервере.
-// Для примера тут хэш от строки "password123". Замени на свой хэш.
-const CorrectHostPasswordHash = "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f"
+
+const CorrectHostPasswordHash = "78cd2252a1bd7e411ea2fe4cd14157cb6d73507d6"
 
 type LoginRequest struct {
 	Password string `json:"password"`
