@@ -179,7 +179,7 @@ function closeHostModal() {
     }
 }
 
-// 1. Хэш оригинального пароля (samoletopera1) должен быть вверху файла
+
 const HOST_PASSWORD_HASH = '68065907241f7ace65827881f4142a7f898de23e6a4f72cda44e2c67cad61b9e';
 
 // 2. Полностью заменяем функцию проверки на эту:
